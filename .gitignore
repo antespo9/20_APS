@@ -1,0 +1,35 @@
+﻿# Python virtual environment
+.venv/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets and environment variables
+.env
+*.key
+*.pem
+*.secret
+
+# Runtime election data
+runtime/*
+!runtime/.gitkeep
+
+# Benchmark generated results
+benchmarks/results/
+
+# Operating system files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Python package metadata
+*.egg-info/
