@@ -30,8 +30,8 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | FR-024 | Fase 0 | `config.py`, `models.py` | `test_models.py` | Profili benchmark | Da implementare |
 | FR-025 | Tutte le fasi | `actors/*` | `test_complete_election_workflow.py` | Non applicabile | Da implementare |
 | FR-026 | Perimetro WP4 | Revisione architetturale | Verifica repository | Non applicabile | Da implementare |
-| SR-001 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Da implementare |
-| SR-002 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Da implementare |
+| SR-001 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
+| SR-002 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
 | SR-003 | Fase 2, Fase 5 | `encryption.py` | `test_encryption.py` | Cifratura voto | Da implementare |
 | SR-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | `test_signatures.py` | Firma e verifica | Da implementare |
 | SR-005 | Fase 0, Fase 1, Fase 3 | `hashes.py` | `test_hashes.py` | Hash chain | Da implementare |
@@ -95,7 +95,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | AC-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Da implementare |
 | AC-011 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Report benchmark | Da implementare |
 | DEC-001 | Tutte le fasi | `actors/*` | Workflow locale | Non applicabile | Da implementare |
-| DEC-002 | Tutte le fasi | `serialization.py` | Test serializzazione | Dimensione messaggi | Da implementare |
+| DEC-002 | Tutte le fasi | `serialization.py` | Test serializzazione | Dimensione messaggi | Completato in Milestone 1 |
 | DEC-003 | Fase 2, Fase 5 | `encryption.py` | Test cifratura | Cifratura voto | Da implementare |
 | DEC-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | Test firme | Firma e verifica | Da implementare |
 | DEC-005 | Fase 1 | `password.py` | Test password | Scrypt | Da implementare |
