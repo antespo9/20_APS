@@ -15,4 +15,17 @@ class CanonicalSerializationError(EvotingError, TypeError):
     """Raised when a value cannot be represented canonically."""
 
 
-__all__ = ["CanonicalSerializationError", "EvotingError", "ModelValidationError"]
+class CryptographicError(EvotingError):
+    """Raised for controlled cryptographic failures."""
+
+
+CRYPTOGRAPHIC_ERROR_MESSAGE = "cryptographic operation failed"
+
+
+__all__ = [
+    "CRYPTOGRAPHIC_ERROR_MESSAGE",
+    "CanonicalSerializationError",
+    "CryptographicError",
+    "EvotingError",
+    "ModelValidationError",
+]

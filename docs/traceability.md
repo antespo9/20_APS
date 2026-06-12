@@ -32,11 +32,11 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | FR-026 | Perimetro WP4 | Revisione architetturale | Verifica repository | Non applicabile | Da implementare |
 | SR-001 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
 | SR-002 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
-| SR-003 | Fase 2, Fase 5 | `encryption.py` | `test_encryption.py` | Cifratura voto | Da implementare |
-| SR-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | `test_signatures.py` | Firma e verifica | Da implementare |
-| SR-005 | Fase 0, Fase 1, Fase 3 | `hashes.py` | `test_hashes.py` | Hash chain | Da implementare |
-| SR-006 | Fase 1 | `password.py`, `registration_authority.py` | `test_password.py` | Derivazione Scrypt | Da implementare |
-| SR-007 | Fase 1 | `password.py`, `config.py` | `test_password.py` | Derivazione Scrypt | Da implementare |
+| SR-003 | Fase 2, Fase 5 | `encryption.py` | `test_encryption.py` | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
+| SR-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | `test_signatures.py` | Firma e verifica | Completato in Milestone 2 per la primitiva RSA-PSS |
+| SR-005 | Fase 0, Fase 1, Fase 3 | `hashes.py` | `test_hashes.py` | Hash chain | Primitiva SHA-256 completata in Milestone 2; integrazione protocollo da implementare |
+| SR-006 | Fase 1 | `password.py`, `registration_authority.py` | `test_password.py` | Derivazione Scrypt | Verifier Scrypt completato in Milestone 2; integrazione RA da implementare |
+| SR-007 | Fase 1 | `password.py`, `config.py` | `test_password.py` | Derivazione Scrypt | Completato in Milestone 2 per parametri Scrypt persistibili |
 | SR-008 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_ta_blob_protection.py` | Apertura `blobTA` | Da implementare |
 | SR-009 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_aead.py` | Apertura `blobTA` | Da implementare |
 | SR-010 | Fase 0, Fase 5 | `shamir.py` | `test_shamir.py` | Generazione quote | Da implementare |
@@ -52,7 +52,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | SR-020 | Fase 3 | `bulletin_board.py` | `test_bulletin_board_rules.py` | Verifica BB | Da implementare |
 | SR-021 | Fase 4 | `bulletin_board.py` | `test_vote_replacement.py` | Verifica BB | Da implementare |
 | SR-022 | Fase 3, Fase 5 | `bulletin_board.py`, `hashes.py` | `test_bulletin_board_tampering.py` | Hash chain | Da implementare |
-| SR-023 | Fase 5 | `errors.py`, `encryption.py`, `aead.py` | `test_crypto_tampering.py`, `test_tally_negative.py` | Non applicabile | Da implementare |
+| SR-023 | Fase 5 | `errors.py`, `encryption.py`, `aead.py` | `test_crypto_tampering.py`, `test_tally_negative.py` | Non applicabile | Completato in Milestone 2 per errori RSA-OAEP e AES-GCM; plaintext fuori dominio da implementare |
 | SR-024 | Fase 5 | `tallying_authority.py` | `test_tally_workflow.py` | Non applicabile | Da implementare |
 | SR-025 | Fase 6 | `verifier.py`, documentazione risultato | `test_public_verification.py` | Verifica pubblica | Da implementare |
 | SR-026 | Fase 0, Fase 1, Fase 2 | `crypto/*` | `test_crypto_tampering.py` | Operazioni crittografiche | Da implementare |
@@ -96,13 +96,13 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | AC-011 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Report benchmark | Da implementare |
 | DEC-001 | Tutte le fasi | `actors/*` | Workflow locale | Non applicabile | Da implementare |
 | DEC-002 | Tutte le fasi | `serialization.py` | Test serializzazione | Dimensione messaggi | Completato in Milestone 1 |
-| DEC-003 | Fase 2, Fase 5 | `encryption.py` | Test cifratura | Cifratura voto | Da implementare |
-| DEC-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | Test firme | Firma e verifica | Da implementare |
-| DEC-005 | Fase 1 | `password.py` | Test password | Scrypt | Da implementare |
+| DEC-003 | Fase 2, Fase 5 | `encryption.py` | Test cifratura | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
+| DEC-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | Test firme | Firma e verifica | Completato in Milestone 2 per la primitiva RSA-PSS |
+| DEC-005 | Fase 1 | `password.py` | Test password | Scrypt | Completato in Milestone 2 per verifier e derivazione Scrypt |
 | DEC-006 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | Test `blobTA` | Apertura `blobTA` | Da implementare |
 | DEC-007 | Fase 1, Fase 4 | `voter_state.py` | Test persistenza | Apertura stato | Da implementare |
 | DEC-008 | Fase 0, Fase 5 | `shamir.py` | Test Shamir | Shamir | Da implementare |
 | DEC-009 | Fase 0 | `config.py` | Test configurazione | Profili | Da implementare |
 | DEC-010 | Fase 4 | `registration_authority.py`, `voter.py` | Test stato perso | Non applicabile | Da implementare |
-| DEC-011 | Fase 5 | `errors.py`, `crypto/*` | Test errori generici | Non applicabile | Da implementare |
+| DEC-011 | Fase 5 | `errors.py`, `crypto/*` | Test errori generici | Non applicabile | Completato in Milestone 2 per primitive RSA-OAEP e AES-GCM |
 | DEC-012 | Tutte le fasi | `stores.py`, `actors/*` | Test separazione dati | Non applicabile | Da implementare |
