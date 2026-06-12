@@ -9,9 +9,7 @@ from enum import Enum
 import json
 from typing import Any
 
-
-class CanonicalSerializationError(TypeError):
-    """Raised when a value cannot be represented canonically."""
+from evoting.errors import CanonicalSerializationError
 
 
 _BYTES_MARKER = "__bytes__"

@@ -1,5 +1,6 @@
 import pytest
 
+from evoting.errors import ModelValidationError
 from evoting.models import (
     Ack,
     AuthorizationRequest,
@@ -74,10 +75,10 @@ def test_election_params_reject_invalid_structure(field: str, value: object) -> 
 
 
 def test_threshold_rejects_impossible_values() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ModelValidationError):
         ThresholdParams(t=4, n=3)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ModelValidationError):
         ThresholdParams(t=0, n=3)
 
 

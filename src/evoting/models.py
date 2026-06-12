@@ -7,6 +7,8 @@ from enum import StrEnum
 import re
 from typing import Mapping
 
+from evoting.errors import ModelValidationError
+
 
 HASH_SIZE_BYTES = 32
 
@@ -21,27 +23,27 @@ class BoardEntryType(StrEnum):
 
 def _validate_identifier(value: str, field_name: str) -> None:
     if not isinstance(value, str) or not _IDENTIFIER_RE.fullmatch(value):
-        raise ValueError(f"{field_name} must be a non-empty protocol identifier")
+        raise ModelValidationError(f"{field_name} must be a non-empty protocol identifier")
 
 
 def _validate_list_code(value: str, field_name: str = "code") -> None:
     if not isinstance(value, str) or not _LIST_CODE_RE.fullmatch(value):
-        raise ValueError(f"{field_name} must be a non-empty list code")
+        raise ModelValidationError(f"{field_name} must be a non-empty list code")
 
 
 def _validate_text(value: str, field_name: str) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field_name} must be non-empty text")
+        raise ModelValidationError(f"{field_name} must be non-empty text")
 
 
 def _validate_positive_int(value: int, field_name: str) -> None:
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
-        raise ValueError(f"{field_name} must be a positive integer")
+        raise ModelValidationError(f"{field_name} must be a positive integer")
 
 
 def _validate_non_negative_int(value: int, field_name: str) -> None:
     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-        raise ValueError(f"{field_name} must be a non-negative integer")
+        raise ModelValidationError(f"{field_name} must be a non-negative integer")
 
 
 def _validate_timestamp_ms(value: int, field_name: str) -> None:
@@ -50,17 +52,17 @@ def _validate_timestamp_ms(value: int, field_name: str) -> None:
 
 def _validate_bytes(value: bytes, field_name: str) -> None:
     if not isinstance(value, bytes) or len(value) == 0:
-        raise ValueError(f"{field_name} must be non-empty bytes")
+        raise ModelValidationError(f"{field_name} must be non-empty bytes")
 
 
 def _validate_hash_bytes(value: bytes, field_name: str) -> None:
     if not isinstance(value, bytes) or len(value) != HASH_SIZE_BYTES:
-        raise ValueError(f"{field_name} must be {HASH_SIZE_BYTES} bytes")
+        raise ModelValidationError(f"{field_name} must be {HASH_SIZE_BYTES} bytes")
 
 
 def _as_tuple(values: tuple | list, field_name: str) -> tuple:
     if not isinstance(values, (tuple, list)) or len(values) == 0:
-        raise ValueError(f"{field_name} must be a non-empty sequence")
+        raise ModelValidationError(f"{field_name} must be a non-empty sequence")
     return tuple(values)
 
 
@@ -83,7 +85,7 @@ class ThresholdParams:
         _validate_positive_int(self.t, "t")
         _validate_positive_int(self.n, "n")
         if self.t > self.n:
-            raise ValueError("t must not be greater than n")
+            raise ModelValidationError("t must not be greater than n")
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,23 +107,23 @@ class ElectionParams:
         _validate_identifier(self.election_id, "election_id")
         lists = _as_tuple(self.lists, "lists")
         if not all(isinstance(item, ElectionList) for item in lists):
-            raise ValueError("lists must contain ElectionList values")
+            raise ModelValidationError("lists must contain ElectionList values")
         codes = [item.code for item in lists]
         if len(set(codes)) != len(codes):
-            raise ValueError("list codes must be unique")
+            raise ModelValidationError("list codes must be unique")
         object.__setattr__(self, "lists", lists)
 
         _validate_timestamp_ms(self.opens_at_ms, "opens_at_ms")
         _validate_timestamp_ms(self.closes_at_ms, "closes_at_ms")
         if self.opens_at_ms >= self.closes_at_ms:
-            raise ValueError("opens_at_ms must be before closes_at_ms")
+            raise ModelValidationError("opens_at_ms must be before closes_at_ms")
         _validate_positive_int(self.eligible_count, "eligible_count")
         _validate_bytes(self.pk_ta_enc, "pk_ta_enc")
         _validate_bytes(self.pk_ta_sig, "pk_ta_sig")
         _validate_bytes(self.pk_ra, "pk_ra")
         _validate_bytes(self.pk_bb, "pk_bb")
         if not isinstance(self.threshold, ThresholdParams):
-            raise ValueError("threshold must be ThresholdParams")
+            raise ModelValidationError("threshold must be ThresholdParams")
         _validate_positive_int(self.vmax, "vmax")
         if self.params_hash is not None:
             _validate_hash_bytes(self.params_hash, "params_hash")
@@ -188,7 +190,7 @@ class BoardEntry:
 
     def __post_init__(self) -> None:
         if not isinstance(self.type, BoardEntryType) or self.type != BoardEntryType.BALLOT:
-            raise ValueError("BoardEntry type must be BALLOT")
+            raise ModelValidationError("BoardEntry type must be BALLOT")
         _validate_identifier(self.election_id, "election_id")
         _validate_bytes(self.c, "c")
         _validate_hash_bytes(self.p_i, "p_i")
@@ -208,7 +210,7 @@ class CloseEntry:
 
     def __post_init__(self) -> None:
         if not isinstance(self.type, BoardEntryType) or self.type != BoardEntryType.CLOSE:
-            raise ValueError("CloseEntry type must be CLOSE")
+            raise ModelValidationError("CloseEntry type must be CLOSE")
         _validate_identifier(self.election_id, "election_id")
         _validate_timestamp_ms(self.timestamp_ms, "timestamp_ms")
 
@@ -253,7 +255,7 @@ class TallyResult:
         _validate_identifier(self.election_id, "election_id")
         _validate_hash_bytes(self.h_close, "h_close")
         if not isinstance(self.totals_by_list, Mapping) or not self.totals_by_list:
-            raise ValueError("totals_by_list must be a non-empty mapping")
+            raise ModelValidationError("totals_by_list must be a non-empty mapping")
         normalized_totals: dict[str, int] = {}
         for code, total in self.totals_by_list.items():
             _validate_list_code(code, "totals_by_list key")
