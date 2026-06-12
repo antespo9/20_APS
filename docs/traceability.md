@@ -37,12 +37,12 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | SR-005 | Fase 0, Fase 1, Fase 3 | `hashes.py` | `test_hashes.py` | Hash chain | Primitiva SHA-256 completata in Milestone 2; integrazione protocollo da implementare |
 | SR-006 | Fase 1 | `password.py`, `registration_authority.py` | `test_password.py` | Derivazione Scrypt | Verifier Scrypt completato in Milestone 2; integrazione RA da implementare |
 | SR-007 | Fase 1 | `password.py`, `config.py` | `test_password.py` | Derivazione Scrypt | Completato in Milestone 2 per parametri Scrypt persistibili |
-| SR-008 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_ta_blob_protection.py` | Apertura `blobTA` | Da implementare |
-| SR-009 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_aead.py` | Apertura `blobTA` | Da implementare |
-| SR-010 | Fase 0, Fase 5 | `shamir.py` | `test_shamir.py` | Generazione quote | Da implementare |
-| SR-011 | Fase 0, Fase 5 | `shamir.py` | `test_shamir.py` | Generazione quote | Da implementare |
-| SR-012 | Fase 5 | `shamir.py` | `test_shamir_negative.py` | Ricostruzione `Kwrap` | Da implementare |
-| SR-013 | Fase 0, Fase 5 | `shamir.py` | Revisione documentazione modulo | Non applicabile | Da implementare |
+| SR-008 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_ta_blob_protection.py` | Apertura `blobTA` | Completato in Milestone 3 |
+| SR-009 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_aead.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Completato in Milestone 3 |
+| SR-010 | Fase 0, Fase 5 | `shamir.py` | `test_shamir.py` | Generazione quote | Completato in Milestone 3 |
+| SR-011 | Fase 0, Fase 5 | `shamir.py` | `test_shamir.py` | Generazione quote | Completato in Milestone 3 |
+| SR-012 | Fase 5 | `shamir.py` | `test_shamir_negative.py` | Ricostruzione `Kwrap` | Completato in Milestone 3 |
+| SR-013 | Fase 0, Fase 5 | `shamir.py` | Revisione documentazione modulo | Non applicabile | Completato in Milestone 3 |
 | SR-014 | Fase 3 | `bulletin_board.py`, `stores.py` | `test_bulletin_board_rules.py` | Non applicabile | Da implementare |
 | SR-015 | Fase 5 | `tallying_authority.py`, `stores.py` | `test_tally_workflow.py` | Non applicabile | Da implementare |
 | SR-016 | Tutte le fasi | `stores.py`, test fixture | Test di assenza dati collegati | Non applicabile | Da implementare |
@@ -90,7 +90,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | AC-005 | Fase 4, Fase 5 | `bulletin_board.py`, `tallying_authority.py` | `test_vote_replacement.py`, `test_tally_workflow.py` | Scrutinio | Da implementare |
 | AC-006 | Fase 3, Fase 6 | `bulletin_board.py`, `verifier.py` | `test_bulletin_board_tampering.py` | Verifica pubblica registro | Da implementare |
 | AC-007 | Fase 5 | `shamir.py`, `tallying_authority.py` | `test_shamir.py`, `test_tally_negative.py` | Ricostruzione `Kwrap` | Da implementare |
-| AC-008 | Fase 5 | `shamir.py`, `aead.py` | `test_shamir_negative.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Da implementare |
+| AC-008 | Fase 5 | `shamir.py`, `aead.py` | `test_shamir_negative.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Completato in Milestone 3 |
 | AC-009 | Fase 4 | `voter.py`, `registration_authority.py`, `bulletin_board.py` | `test_voter_state_persistence.py` | Non applicabile | Da implementare |
 | AC-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Da implementare |
 | AC-011 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Report benchmark | Da implementare |
@@ -99,9 +99,9 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | DEC-003 | Fase 2, Fase 5 | `encryption.py` | Test cifratura | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
 | DEC-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | Test firme | Firma e verifica | Completato in Milestone 2 per la primitiva RSA-PSS |
 | DEC-005 | Fase 1 | `password.py` | Test password | Scrypt | Completato in Milestone 2 per verifier e derivazione Scrypt |
-| DEC-006 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | Test `blobTA` | Apertura `blobTA` | Da implementare |
+| DEC-006 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | Test `blobTA` | Apertura `blobTA` | Completato in Milestone 3 |
 | DEC-007 | Fase 1, Fase 4 | `voter_state.py` | Test persistenza | Apertura stato | Da implementare |
-| DEC-008 | Fase 0, Fase 5 | `shamir.py` | Test Shamir | Shamir | Da implementare |
+| DEC-008 | Fase 0, Fase 5 | `shamir.py` | Test Shamir | Shamir | Completato in Milestone 3 |
 | DEC-009 | Fase 0 | `config.py` | Test configurazione | Profili | Da implementare |
 | DEC-010 | Fase 4 | `registration_authority.py`, `voter.py` | Test stato perso | Non applicabile | Da implementare |
 | DEC-011 | Fase 5 | `errors.py`, `crypto/*` | Test errori generici | Non applicabile | Completato in Milestone 2 per primitive RSA-OAEP e AES-GCM |

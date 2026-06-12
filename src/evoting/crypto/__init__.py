@@ -21,6 +21,13 @@ from evoting.crypto.password import (
     derive_key,
     verify_password,
 )
+from evoting.crypto.shamir import (
+    FIELD_PRIME,
+    WRAPPING_KEY_SIZE,
+    ShamirShare,
+    reconstruct_secret,
+    split_secret,
+)
 from evoting.crypto.signatures import (
     generate_signature_private_key,
     load_signature_private_key,
@@ -32,6 +39,7 @@ from evoting.crypto.signatures import (
 
 __all__ = [
     "AeadCiphertext",
+    "FIELD_PRIME",
     "PasswordVerifier",
     "SCRYPT_DEFAULT_N",
     "SCRYPT_DEFAULT_P",
@@ -39,6 +47,8 @@ __all__ = [
     "SCRYPT_SALT_SIZE",
     "SHA256_DIGEST_SIZE",
     "ScryptParameters",
+    "ShamirShare",
+    "WRAPPING_KEY_SIZE",
     "create_password_verifier",
     "decrypt_aead",
     "decrypt_vote",
@@ -52,9 +62,11 @@ __all__ = [
     "load_encryption_public_key",
     "load_signature_private_key",
     "load_signature_public_key",
+    "reconstruct_secret",
     "sha256_digest",
     "sign_message",
     "signature_public_key_to_pem",
+    "split_secret",
     "verify_password",
     "verify_signature",
 ]
