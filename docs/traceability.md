@@ -29,7 +29,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | FR-023 | Fase 6 | `verifier.py` | `test_public_verification.py` | Verifica pubblica registro | Completato in Milestone 6: il verificatore controlla genesis, indici, hash chain, RID, firme RA/BB/pseudonime/TA, versioni, selezione finale e coerenza numerica |
 | FR-024 | Fase 0 | `config.py`, `models.py` | `test_config.py` | Profili benchmark | Completato in Milestone 7A per il profilo dimostrativo: `Vmax`, `t` e `n` sono configurabili e il default usa `Vmax = 3`, `t = 3`, `n = 5` |
 | FR-025 | Tutte le fasi | `actors/*`, `workflow.py` | `test_complete_election_workflow.py` | Non applicabile | Completato in Milestone 7A: il workflow completo resta stand-alone e usa solo chiamate locali tra moduli |
-| FR-026 | Perimetro WP4 | Revisione architetturale | Verifica repository | Non applicabile | Da implementare |
+| FR-026 | Perimetro WP4 | Revisione architetturale, `gui/*` | Verifica repository, `test_gui_controller.py`, `test_gui_workflow.py` | Non applicabile | Completato in Milestone 7B: la demo grafica resta stand-alone e locale, usa `tkinter`/`ttk`, non introduce servizi esterni o dipendenze e richiama il workflow esistente tramite controller |
 | SR-001 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
 | SR-002 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
 | SR-003 | Fase 2, Fase 5 | `encryption.py` | `test_encryption.py` | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
@@ -64,9 +64,9 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | PR-006 | Fase 1, Fase 4 | `registration_authority.py`, `voter.py` | `test_voter_state_persistence.py` | Non applicabile | Completato in Milestone 4 |
 | PR-007 | Fase 4 | `voter.py`, `bulletin_board.py`, `workflow.py` | `test_voter_state_persistence.py`, `test_vote_replacement.py`, `test_state_loss_workflow.py` | Non applicabile | Completato in Milestone 7A end-to-end: dopo perdita o corruzione dello stato locale la sostituzione non viene prodotta, la RA rifiuta una seconda autorizzazione e la scheda gia' accettata resta scrutinata |
 | PR-008 | Perimetro runtime | `stores.py` | Verifica repository | Non applicabile | Completato in Milestone 4 per gli archivi introdotti |
-| TR-001 | Tutte le fasi | `tests/*` | Suite completa | Non applicabile | Coperto fino a Milestone 7A con test unitari, integrazione, sicurezza, persistenza, workflow completo e smoke demo |
-| TR-002 | Tutte le fasi | `tests/unit/*` | Suite unitaria | Non applicabile | Coperto per Milestone 5 da `test_voter_ballot.py` e `test_bulletin_board_rules.py` |
-| TR-003 | Tutte le fasi | `tests/integration/*` | Suite integrazione | Non applicabile | Coperto in Milestone 7A anche da `test_complete_election_workflow.py` e `test_state_loss_workflow.py` |
+| TR-001 | Tutte le fasi | `tests/*` | Suite completa | Non applicabile | Esteso in Milestone 7B con test headless per formattazione, controller, workflow GUI, modalita' `--check` e import senza apertura finestra |
+| TR-002 | Tutte le fasi | `tests/unit/*` | Suite unitaria | Non applicabile | Esteso in Milestone 7B con `test_gui_formatting.py` e `test_gui_controller.py` per snapshot pubblici, stati iniziali, azioni e rifiuti fuori ordine |
+| TR-003 | Tutte le fasi | `tests/integration/*` | Suite integrazione | Non applicabile | Esteso in Milestone 7B con `test_gui_workflow.py` per flusso GUI completo: autorizzazione, voto, sostituzione, chiusura, scrutinio e verifica pubblica |
 | TR-004 | Fase 1, Fase 3, Fase 6 | `tests/security/*` | Test di alterazione | Non applicabile | Coperto per Milestone 5 da `test_bulletin_board_tampering.py` |
 | TR-005 | Fase 1, Fase 4 | `tests/integration/test_voter_state_persistence.py` | Test persistenza | Non applicabile | Completato in Milestone 4 |
 | TR-006 | Fase 5 | `tests/security/*` | Test negativi crypto e Shamir | Non applicabile | Completato per Milestone 6 con test negativi su soglia Shamir, quote/blob alterati e anomalie di ciphertext/plaintext nello scrutinio |
