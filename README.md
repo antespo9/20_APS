@@ -18,6 +18,20 @@ descritto nel Project Work di Algoritmi e Protocolli per la Sicurezza.
 Il codice applicativo si trova in src/evoting.
 I test si trovano nella cartella tests.
 
+## Verifica e riproduzione
+
+Eseguire la suite di test completa:
+
+```powershell
+python -m pytest
+```
+
+Eseguire la demo testuale end-to-end:
+
+```powershell
+python -m evoting.demo
+```
+
 ## Demo locale
 
 La dimostrazione grafica locale usa solo `tkinter` e `tkinter.ttk` della

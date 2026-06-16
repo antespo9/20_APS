@@ -1,6 +1,19 @@
 # Matrice di tracciabilita'
 
-Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallineare` indica requisiti gia' parzialmente coperti da codice o test precedenti, ma non ancora aggiornati alla specifica corrente del protocollo.
+La matrice riassume la copertura del prototipo WP4 rispetto a requisiti,
+decisioni, codice, test e benchmark. Lo stato `Completato` e' usato solo quando
+la funzionalita' risulta implementata e coperta da test o da verifica
+documentale applicabile. Lo stato `Parziale` indica copertura effettiva ma con
+un limite residuo dichiarato.
+
+## Audit Milestone 7D
+
+Il confronto finale tra documentazione, codice, test e benchmark conferma il
+perimetro didattico, stand-alone e locale del prototipo. La verifica pubblica
+controlla firme, autorizzazioni, RID, hash chain, versioni, `Vmax`, selezione
+delle ultime versioni, legame con `h_close`, firma TA e coerenza numerica, ma
+non dimostra crittograficamente la corretta decifratura di ogni scheda. Non sono
+implementate prove verificabili di decifratura ne' zero-knowledge proof.
 
 | Requisito | Fase WP2 | Modulo previsto | Test previsto | Benchmark | Stato |
 | --- | --- | --- | --- | --- | --- |
@@ -34,7 +47,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | SR-002 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
 | SR-003 | Fase 2, Fase 5 | `encryption.py` | `test_encryption.py` | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
 | SR-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | `test_signatures.py` | Firma e verifica | Completato in Milestone 2 per la primitiva RSA-PSS |
-| SR-005 | Fase 0, Fase 1, Fase 3 | `hashes.py` | `test_hashes.py` | Hash chain | Primitiva SHA-256 completata in Milestone 2; integrazione protocollo da implementare |
+| SR-005 | Fase 0, Fase 1, Fase 3 | `hashes.py`, `bulletin_board.py`, `verifier.py` | `test_hashes.py`, `test_bulletin_board_tampering.py`, `test_public_verification.py` | Hash chain, RID | Completato in Milestone 7D: SHA-256 e' usato per pseudonimi, `params_hash`, RID, entry hash, hash chain e controlli pubblici |
 | SR-006 | Fase 1 | `password.py`, `registration_authority.py` | `test_password.py`, `test_registration_authority.py` | Derivazione Scrypt | Completato in Milestone 4 per l'archivio RA; primitiva Scrypt completata in Milestone 2 |
 | SR-007 | Fase 1 | `password.py`, `config.py` | `test_password.py` | Derivazione Scrypt | Completato in Milestone 2 per parametri Scrypt persistibili |
 | SR-008 | Fase 0, Fase 5 | `ta_blob.py`, `tallying_authority.py` | `test_ta_blob.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Completato nella correzione `blobTA`: AES-256-CBC, padding PKCS7 e HMAC-SHA256 sono implementati e coperti da test unitari e di integrazione |
@@ -45,7 +58,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | SR-013 | Fase 0, Fase 5 | `shamir.py` | Revisione documentazione modulo | Non applicabile | Completato in Milestone 3 |
 | SR-014 | Fase 3 | `bulletin_board.py`, `stores.py` | `test_bulletin_board_rules.py` | Non applicabile | Completato in Milestone 5 per il BB in memoria: il registro pubblico non contiene identita' reali |
 | SR-015 | Fase 5 | `tallying_authority.py`, `stores.py` | `test_tally_workflow.py` | Non applicabile | Completato in Milestone 6 per lo scrutinio locale: la TA opera sui record pubblici del BB, quote commissariali e `blobTA`, senza ricevere identita' reali |
-| SR-016 | Tutte le fasi | `workflow.py`, `demo.py`, test fixture | `test_complete_election_workflow.py` | Non applicabile | Coperto in Milestone 7A per riepilogo pubblico e output demo: i test verificano l'assenza di password, chiavi private, identificativi elettore e marker di quote o segreti nel riepilogo/output |
+| SR-016 | Tutte le fasi | `workflow.py`, `demo.py`, `gui/*`, test fixture | `test_complete_election_workflow.py`, `test_voter_state_persistence.py`, `test_gui_workflow.py`, `test_benchmark_smoke.py` | Non applicabile | Completato in Milestone 7D per archivi e output implementati: non sono creati report o log che colleghino identita' reale, pseudonimo e voto in chiaro; resta dichiarato che la RA conosce identita' e pseudonimo nel proprio dominio, senza voto in chiaro |
 | SR-017 | Fase 1, Fase 3 | `registration_authority.py`, `signatures.py` | `test_authorization_tampering.py` | Verifica firma RA | Completato in Milestone 4 per autorizzazioni RA |
 | SR-018 | Fase 2, Fase 3 | `voter.py`, `signatures.py` | `test_voter_ballot.py`, `test_bulletin_board_tampering.py` | Verifica firma pseudonima | Completato in Milestone 5: pacchetti alterati o firme pseudonime errate sono rifiutati |
 | SR-019 | Fase 2, Fase 4 | `bulletin_board.py` | `test_bulletin_board_rules.py`, `test_vote_replacement.py` | Non applicabile | Completato in Milestone 5: il BB richiede firma pseudonima valida e rifiuta cambi di chiave per lo stesso `p_i` |
@@ -73,17 +86,17 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | TR-007 | Fase 4 | `tests/integration/test_vote_replacement.py` | Test sostituzione | Non applicabile | Completato in Milestone 5 |
 | TR-008 | Fase 5 | `tests/integration/test_tally_workflow.py` | Test scrutinio | Non applicabile | Completato in Milestone 6 con test di scrutinio corretto, sostituzioni, decifratura delle sole versioni finali, liste con zero voti e coerenza dei conteggi |
 | TR-009 | Fase 6 | `tests/integration/test_public_verification.py` | Test verifica | Non applicabile | Completato in Milestone 6 con test unitari e di sicurezza per ricevute, registro pubblico, risultato firmato e alterazioni |
-| TR-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Coperto operativamente in Milestone 7A con esecuzione della suite completa |
-| TR-011 | Tutte le fasi | Processo di milestone | Suite applicabile | Non applicabile | Coperto operativamente in Milestone 7A: la milestone viene considerata completa solo con test applicabili superati |
-| BR-001 | WP4 prestazioni | `benchmarks/runner.py`, `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | Tutti i benchmark | Completato in Milestone 7C: il runner produce misure distinte per generazione chiavi, RA, cifratura, firma, preparazione pacchetto, BB, hash chain, ricevuta, Shamir, `blobTA`, scrutinio e verifica pubblica |
-| BR-002 | WP4 prestazioni | `benchmarks/models.py`, `benchmarks/runner.py` | `test_benchmark_smoke.py` | Report completo | Completato in Milestone 7C: ogni risultato registra operazione, profilo, scala input, warm-up, ripetizioni, minimo, mediana, media, deviazione standard, unita' e dimensione messaggio quando applicabile |
-| BR-003 | Fase 1, Fase 2, Fase 3 | `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | RA, cifratura, firma, BB, hash, ricevuta | Completato in Milestone 7C: sono misurate emissione autorizzazione RA, cifratura RSA-OAEP, firma RSA-PSS, preparazione pacchetto, accettazione BB, aggiornamento hash chain e verifica ricevuta |
-| BR-004 | Fase 0, Fase 5 | `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | Shamir, `Kwrap`, `blobTA`, scrutinio | Completato in Milestone 7C: sono misurate separatamente suddivisione Shamir, ricostruzione Shamir, creazione `blobTA`, apertura `blobTA` e scrutinio |
-| BR-005 | Fase 6 | `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | Verifica pubblica, dimensioni | Completato in Milestone 7C: sono misurate verifica pubblica su scale crescenti, dimensione del pacchetto di voto e dimensione della ricevuta |
-| BR-006 | WP4 prestazioni | `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | Key generation separata | Completato in Milestone 7C: generazione RSA per firma e cifratura sono benchmark separati e non incluse nelle normali operazioni elettorali misurate |
-| BR-007 | Fase 2 | `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | Costo lato elettore | Completato in Milestone 7C: la preparazione completa del pacchetto lato elettore e' misurata come operazione singola a scala costante |
-| BR-008 | Fase 5, Fase 6 | `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | Scalabilita' lineare | Completato in Milestone 7C: scrutinio e verifica pubblica sono misurati con scale esplicite; il profilo `full` include piu' dimensioni per la verifica pubblica |
-| AC-001 | Tutte le fasi | `actors/*`, `workflow.py`, `demo.py` | `test_complete_election_workflow.py` | Tutti i benchmark principali | Completato in Milestone 7A per il workflow dimostrativo: configura, autentica, autorizza, registra, sostituisce, chiude, scrutinia e verifica un'elezione locale |
+| TR-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Completato in Milestone 7D: la suite completa e' stata eseguita con `.\.venv\Scripts\python.exe -m pytest`, 273 test superati |
+| TR-011 | Tutte le fasi | Processo di milestone | Suite applicabile | Non applicabile | Completato in Milestone 7D: la milestone viene chiusa solo dopo suite applicabile superata, 273 test superati |
+| BR-001 | WP4 prestazioni | `benchmarks/runner.py`, `benchmarks/scenarios.py` | `test_benchmark_smoke.py` | Tutti i benchmark | Completato in Milestone 7D: il runner e il report distinguono generazione chiavi, RA, cifratura, firma, preparazione pacchetto, BB, hash chain, ricevuta, Shamir, `blobTA`, scrutinio, dimensioni e verifica pubblica |
+| BR-002 | WP4 prestazioni | `benchmarks/models.py`, `benchmarks/runner.py`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | Report completo | Completato in Milestone 7D: ogni risultato registra operazione, profilo, scala input, warm-up, ripetizioni, minimo, mediana, media, deviazione standard, unita' e dimensione messaggio quando applicabile |
+| BR-003 | Fase 1, Fase 2, Fase 3 | `benchmarks/scenarios.py`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | RA, cifratura, firma, BB, hash, ricevuta | Completato in Milestone 7D: sono riportate emissione autorizzazione RA, cifratura RSA-OAEP, firma RSA-PSS, preparazione pacchetto, accettazione BB, aggiornamento hash chain e verifica ricevuta |
+| BR-004 | Fase 0, Fase 5 | `benchmarks/scenarios.py`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | Shamir, `Kwrap`, `blobTA`, scrutinio | Completato in Milestone 7D: sono riportate separatamente suddivisione Shamir, ricostruzione Shamir, creazione `blobTA`, apertura `blobTA` e scrutinio |
+| BR-005 | Fase 6 | `benchmarks/scenarios.py`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | Verifica pubblica, dimensioni | Completato in Milestone 7D: sono riportate verifica pubblica su 2, 4, 11 e 26 eventi, dimensione del pacchetto di voto e dimensione della ricevuta |
+| BR-006 | WP4 prestazioni | `benchmarks/scenarios.py`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | Key generation separata | Completato in Milestone 7D: generazione RSA per firma e cifratura sono benchmark separati e non incluse nelle normali operazioni elettorali misurate |
+| BR-007 | Fase 2 | `benchmarks/scenarios.py`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | Costo lato elettore | Parziale in Milestone 7D: la preparazione completa del pacchetto lato elettore e' misurata come operazione singola a scala costante, ma non e' presente un confronto sperimentale esplicito al variare del numero totale di votanti |
+| BR-008 | Fase 5, Fase 6 | `benchmarks/scenarios.py`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | Scalabilita' lineare | Parziale in Milestone 7D: la verifica pubblica e' misurata su scale crescenti e mostra crescita approssimativamente lineare; lo scrutinio e' misurato nel profilo `full` su 10 schede finali, senza serie multi-scala completa |
+| AC-001 | Tutte le fasi | `actors/*`, `workflow.py`, `demo.py`, `gui/*` | `test_complete_election_workflow.py`, `test_gui_workflow.py` | Tutti i benchmark principali | Completato in Milestone 7D: demo testuale e GUI dimostrativa configurano, autenticano, autorizzano, registrano, sostituiscono, chiudono, scrutinano e verificano un'elezione locale |
 | AC-002 | Fase 1 | `registration_authority.py` | `test_registration_authority.py` | Emissione autorizzazione RA | Completato in Milestone 4 |
 | AC-003 | Fase 3 | `bulletin_board.py` | `test_bulletin_board_rules.py` | Verifica BB, ricevuta | Completato in Milestone 5 |
 | AC-004 | Fase 3, Fase 4 | `bulletin_board.py` | `test_bulletin_board_rules.py`, `test_bulletin_board_tampering.py`, `test_vote_replacement.py` | Verifica BB | Completato in Milestone 5 |
@@ -92,9 +105,9 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | AC-007 | Fase 5 | `shamir.py`, `tallying_authority.py` | `test_shamir.py`, `test_tally_negative.py` | Ricostruzione `Kwrap` | Completato in Milestone 6: lo scrutinio fallisce con meno di `t` quote e riesce con almeno `t` quote valide |
 | AC-008 | Fase 5 | `shamir.py`, `ta_blob.py` | `test_shamir_negative.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Completato nella correzione `blobTA`: una quota alterata produce una `Kwrap` errata e l'apertura CBC/HMAC/HKDF fallisce con errore applicativo generico |
 | AC-009 | Fase 4 | `voter.py`, `registration_authority.py`, `bulletin_board.py`, `workflow.py` | `test_state_loss_workflow.py`, `test_voter_state_persistence.py` | Non applicabile | Completato in Milestone 7A: perdita o corruzione dello stato locale impedisce sostituzioni e non annulla la scheda gia' accettata dal BB |
-| AC-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Coperto operativamente in Milestone 7A con la suite completa |
-| AC-011 | WP4 prestazioni | `benchmarks/*` | `test_benchmark_smoke.py` | Report benchmark | Completato in Milestone 7C: il benchmark smoke produce JSON e CSV, passa da CLI e i test verificano schema, metriche non negative e assenza di dati riservati nei risultati |
-| DEC-001 | Tutte le fasi | `actors/*`, `workflow.py` | `test_complete_election_workflow.py` | Non applicabile | Completato in Milestone 7A: lo scenario end-to-end usa attori logici nello stesso processo senza rete o servizi esterni |
+| AC-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Completato in Milestone 7D: suite completa superata con 273 test |
+| AC-011 | WP4 prestazioni | `benchmarks/*`, `docs/benchmark-report.md` | `test_benchmark_smoke.py` | Report benchmark | Completato in Milestone 7D: benchmark smoke e full producono misure separate; il test smoke verifica schema, metriche non negative e assenza di dati riservati nei risultati, mentre il report documenta il profilo full |
+| DEC-001 | Tutte le fasi | `actors/*`, `workflow.py`, `gui/*` | `test_complete_election_workflow.py`, `test_gui_workflow.py` | Non applicabile | Completato in Milestone 7D: scenario end-to-end, demo testuale e GUI usano attori logici nello stesso processo, senza rete o servizi esterni |
 | DEC-002 | Tutte le fasi | `serialization.py` | Test serializzazione | Dimensione messaggi | Completato in Milestone 1 |
 | DEC-003 | Fase 2, Fase 5 | `encryption.py` | Test cifratura | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
 | DEC-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | Test firme | Firma e verifica | Completato in Milestone 2 per la primitiva RSA-PSS |
@@ -102,7 +115,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | DEC-006 | Fase 0, Fase 5 | `ta_blob.py`, `tallying_authority.py` | Test `blobTA` | Apertura `blobTA` | Completato nella correzione `blobTA`: AES-256-CBC, PKCS7, HMAC-SHA256, HKDF-SHA256, IV/ciphertext/MAC, Encrypt-then-Authenticate e nessun Fernet sono coperti da test |
 | DEC-007 | Fase 1, Fase 4 | `voter_state.py` | Test persistenza | Apertura stato | Completato in Milestone 4 |
 | DEC-008 | Fase 0, Fase 5 | `shamir.py` | Test Shamir | Shamir | Completato in Milestone 3 |
-| DEC-009 | Fase 0 | `config.py` | `test_config.py` | Profili | Completato in Milestone 7A: profilo demo centralizzato con `Vmax`, soglia, liste, elettori, finestre temporali e piano dimostrativo validati |
+| DEC-009 | Fase 0 | `config.py` | `test_config.py` | Profili | Completato in Milestone 7D: profilo demo centralizzato con `Vmax`, soglia, liste, elettori, finestre temporali e piano dimostrativo validati; i benchmark full documentano separatamente le operazioni misurate |
 | DEC-010 | Fase 4 | `registration_authority.py`, `voter.py` | Test stato perso | Non applicabile | Completato in Milestone 4 per la mancata riemissione RA; completato in Milestone 5 per la sostituzione basata sullo stesso stato pseudonimo |
 | DEC-011 | Fase 5 | `errors.py`, `crypto/*` | Test errori generici | Non applicabile | Completato in Milestone 2 per primitive RSA-OAEP e AES-GCM locale; completato nella correzione `blobTA` per errori pubblici generici su MAC, IV, ciphertext, contesto, `election_id`, padding e input malformati |
 | DEC-012 | Tutte le fasi | `stores.py`, `actors/*` | Test separazione dati | Non applicabile | Coperto in Milestone 4 per gli archivi introdotti; mantenuto in Milestone 5 per il registro BB senza identita' reali |

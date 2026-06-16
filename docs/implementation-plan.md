@@ -2,6 +2,27 @@
 
 L'implementazione deve procedere una milestone alla volta. Ogni milestone deve partire da repository pulita o da modifiche chiaramente attribuibili alla milestone corrente, deve modificare solo i file indicati e deve concludersi con test applicabili superati. Non si passa alla milestone successiva se quella corrente non e' completa.
 
+## Stato corrente dopo Milestone 7D
+
+Le milestone 0-7 risultano completate nel perimetro del prototipo WP4:
+
+- Milestone 0: documentazione tecnica di base.
+- Milestone 1: modelli dati e serializzazione canonica.
+- Milestone 2: primitive crittografiche di base.
+- Milestone 3: Shamir Secret Sharing e protezione di `blobTA`.
+- Milestone 4: Registration Authority e stato pseudonimo elettore.
+- Milestone 5: Bulletin Board, hash chain, ricevute e sostituzione.
+- Milestone 6: scrutinio, verifica individuale e verifica pubblica.
+- Milestone 7: workflow completo, demo testuale, GUI dimostrativa e benchmark.
+
+La Milestone 7D aggiunge il report benchmark e una bozza WP4 pronta da
+integrare nel documento finale. Le attivita' residue non richiedono nuove
+funzionalita' del prototipo:
+
+- integrazione del testo WP4 nel documento finale del project work;
+- audit conclusivo di coerenza tra documento finale, repository e requisiti;
+- preparazione della consegna usando solo contenuti destinati al versionamento.
+
 ## Milestone 0 - Documentazione di base WP4
 
 Obiettivo: definire requisiti, architettura, piano, tracciabilita' e decisioni implementative prima del codice.
