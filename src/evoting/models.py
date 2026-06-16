@@ -102,6 +102,7 @@ class ElectionParams:
     threshold: ThresholdParams
     vmax: int
     params_hash: bytes | None = None
+    params_signature: bytes | None = None
 
     def __post_init__(self) -> None:
         _validate_identifier(self.election_id, "election_id")
@@ -127,6 +128,8 @@ class ElectionParams:
         _validate_positive_int(self.vmax, "vmax")
         if self.params_hash is not None:
             _validate_hash_bytes(self.params_hash, "params_hash")
+        if self.params_signature is not None:
+            _validate_bytes(self.params_signature, "params_signature")
 
 
 @dataclass(frozen=True, slots=True)

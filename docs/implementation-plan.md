@@ -339,7 +339,7 @@ File da creare o modificare:
 - `src/evoting/config.py`
 - `src/evoting/benchmarks/runner.py`
 - `tests/integration/test_complete_election_workflow.py`
-- `tests/performance/test_benchmark_smoke.py`
+- `tests/benchmark/test_benchmark_smoke.py`
 
 Dipendenze: Milestone 6.
 

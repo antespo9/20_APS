@@ -3,10 +3,12 @@ from dataclasses import replace
 import pytest
 
 from evoting.actors.bulletin_board import public_params_hash
+from evoting.actors.verifier import verify_public_params_signature
 from evoting.config import DemoProfile, DemoVoter, default_demo_profile
 from evoting.crypto.password import ScryptParameters
 from evoting.errors import ModelValidationError
 from evoting.models import ElectionList, ThresholdParams
+from evoting.serialization import canonical_bytes
 from evoting.workflow import setup_demo_election
 
 
@@ -69,6 +71,8 @@ def test_setup_generates_distinct_role_keys_and_coherent_public_params(tmp_path)
     assert params.vmax == profile.vmax
     assert params.eligible_count == profile.voter_count
     assert params.params_hash == public_params_hash(params)
+    assert params.params_signature is not None
+    assert verify_public_params_signature(params) is True
 
 
 def test_setup_creates_blob_ta_and_expected_number_of_commissioner_shares(tmp_path) -> None:
@@ -78,3 +82,19 @@ def test_setup_creates_blob_ta_and_expected_number_of_commissioner_shares(tmp_pa
     assert setup.blob_ta.threshold_t == setup.params.threshold.t
     assert setup.blob_ta.threshold_n == setup.params.threshold.n
     assert len(setup.commissioner_set.shares) == setup.params.threshold.n
+
+
+def test_public_params_object_contains_no_private_keys_or_secrets(tmp_path) -> None:
+    setup = setup_demo_election(_profile(tmp_path))
+    rendered = repr(setup.params).encode("utf-8") + canonical_bytes(setup.params)
+
+    forbidden_markers = (
+        b"BEGIN PRIVATE KEY",
+        b"Kwrap",
+        b"ShamirShare",
+        b"sk_",
+        b"password",
+        b"share=",
+    )
+    for marker in forbidden_markers:
+        assert marker not in rendered

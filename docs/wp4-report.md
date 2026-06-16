@@ -52,15 +52,18 @@ sostituzione `Vmax`.
 
 La configurazione predefinita usa `Vmax = 3`, `t = 3`, `n = 5` e tre elettori
 fittizi. I parametri pubblici includono un `params_hash` calcolato con
-serializzazione canonica e SHA-256.
+serializzazione canonica e SHA-256. Lo stesso payload canonico dei parametri
+pubblici, con contesto e versione dello schema, viene firmato dalla TA con
+`sk_TA_sig`; la firma e' verificabile pubblicamente con `pk_TA_sig` prima di
+procedere con il workflow.
 
 ## 5. Primitive crittografiche
 
 Le primitive implementate sono:
 
 - RSA-OAEP con SHA-256 e MGF1-SHA-256 per cifrare il codice lista scelto;
-- RSA-PSS con SHA-256 e MGF1-SHA-256 per firme RA, BB, TA ed elettore
-  pseudonimo;
+- RSA-PSS con SHA-256 e MGF1-SHA-256 per firme RA, BB, TA sui parametri
+  pubblici e sul risultato, ed elettore pseudonimo;
 - SHA-256 per pseudonimi, digest, RID, `params_hash` e hash chain;
 - Scrypt per verifier password RA e derivazione della chiave locale dello stato
   elettore;
@@ -184,6 +187,7 @@ decifratura.
 
 Il verificatore pubblico controlla:
 
+- firma TA dei parametri pubblici e coerenza del relativo `params_hash`;
 - firme RA sulle autorizzazioni;
 - firme pseudonime sui pacchetti;
 - RID ricalcolati;
@@ -203,9 +207,10 @@ commissari.
 ## 16. Workflow end-to-end
 
 Il workflow completo configura il profilo demo, registra elettori fittizi,
-rilascia autorizzazioni, salva e riapre lo stato cifrato degli elettori, deposita
-voti, esegue una sostituzione valida, chiude il BB, scrutinia e verifica
-ricevute, registro e risultato.
+verifica la firma TA sui parametri pubblici, registra elettori fittizi, rilascia
+autorizzazioni, salva e riapre lo stato cifrato degli elettori, deposita voti,
+esegue una sostituzione valida, chiude il BB, scrutinia e verifica ricevute,
+registro e risultato.
 
 Lo scenario dimostrativo produce tre schede finali, conserva la versione
 sostituita nel registro e verifica pubblicamente l'esito finale.
@@ -229,12 +234,13 @@ Sono coperti modelli, serializzazione canonica, primitive crittografiche, RA,
 BB, TA, Shamir, `blobTA`, persistenza cifrata, sostituzione, perdita dello
 stato, verifica individuale, verifica pubblica, GUI e workflow completo.
 
-I test includono casi negativi per messaggi alterati, firme errate,
+I test includono casi negativi per parametri pubblici alterati, firma parametri
+errata, chiave pubblica TA di firma errata, messaggi alterati, firme errate,
 autorizzazioni contraffatte, replay, versioni non valide, `Vmax`, voto dopo
 `CLOSE`, hash chain manomessa, ciphertext malformati, plaintext fuori dominio,
 MAC `blobTA` errati, tag AES-GCM errati e quote Shamir duplicate o malformate.
 
-La suite di riferimento risulta composta da 273 test superati.
+La suite di riferimento risulta composta da 282 test superati.
 
 ## 19. Benchmark
 

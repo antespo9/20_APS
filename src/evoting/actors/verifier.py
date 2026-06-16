@@ -11,6 +11,8 @@ from evoting.actors.bulletin_board import (
     chain_link_hash,
     entry_hash,
     genesis_hash,
+    public_params_hash,
+    public_params_message,
     verify_ballot_signature,
     verify_close_state,
     verify_receipt,
@@ -171,6 +173,24 @@ def select_final_ballot_entries(
     ).final_ballot_entries
 
 
+def verify_public_params_signature(params: ElectionParams) -> bool:
+    """Verify the TA signature over the canonical public election parameters."""
+
+    try:
+        if (
+            not isinstance(params, ElectionParams)
+            or params.params_hash is None
+            or params.params_signature is None
+        ):
+            return False
+        if params.params_hash != public_params_hash(params):
+            return False
+        public_key = load_signature_public_key(params.pk_ta_sig)
+        return verify_signature(public_key, public_params_message(params), params.params_signature)
+    except Exception:
+        return False
+
+
 def verify_individual_receipt(
     params: ElectionParams,
     records: Sequence[BoardLogRecord],
@@ -268,6 +288,8 @@ def verify_tally_result(
     """Verify the public consistency of a signed tally result."""
 
     try:
+        if not verify_public_params_signature(params):
+            return False
         log_state = validate_public_log(
             params,
             records,
@@ -375,6 +397,7 @@ __all__ = [
     "tally_result_message_from_result",
     "validate_public_log",
     "verify_individual_receipt",
+    "verify_public_params_signature",
     "verify_public_election",
     "verify_public_log",
     "verify_tally_result",

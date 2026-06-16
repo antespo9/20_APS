@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from evoting.actors.bulletin_board import BulletinBoard
+from evoting.actors.bulletin_board import public_params_hash, public_params_message
 from evoting.actors.commissioners import CommissionerShare
 from evoting.actors.registration_authority import RegistrationAuthority
 from evoting.actors import tallying_authority as tallying_authority_module
@@ -13,7 +14,7 @@ from evoting.crypto.encryption import (
     generate_encryption_private_key,
 )
 from evoting.crypto.password import ScryptParameters
-from evoting.crypto.signatures import generate_signature_private_key, signature_public_key_to_pem
+from evoting.crypto.signatures import generate_signature_private_key, sign_message, signature_public_key_to_pem
 from evoting.models import ElectionList, ElectionParams, ThresholdParams
 
 
@@ -74,7 +75,16 @@ def _fixture(tmp_path, voters: int) -> WorkflowFixture:
         threshold=ThresholdParams(t=3, n=5),
         vmax=3,
     )
+    params = _publish_params(params, ta_sig_key)
     return WorkflowFixture(params, BulletinBoard(params, bb_key), tuple(states), blob, commissioners.shares, ta_sig_key)
+
+
+def _publish_params(params: ElectionParams, signing_key: object) -> ElectionParams:
+    return replace(
+        params,
+        params_hash=public_params_hash(params),
+        params_signature=sign_message(signing_key, public_params_message(params)),
+    )
 
 
 def _submit(board: BulletinBoard, state, params: ElectionParams, code: str, *, now_ms: int):

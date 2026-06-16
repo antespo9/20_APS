@@ -34,10 +34,12 @@ def test_election_params_accept_protocol_shape() -> None:
         threshold=ThresholdParams(t=3, n=5),
         vmax=3,
         params_hash=None,
+        params_signature=None,
     )
 
     assert params.election_id == "election-2026"
     assert params.params_hash is None
+    assert params.params_signature is None
     assert params.threshold.t == 3
 
 
@@ -51,6 +53,7 @@ def test_election_params_accept_protocol_shape() -> None:
         ("pk_ra", b""),
         ("vmax", 0),
         ("params_hash", b"short"),
+        ("params_signature", b""),
     ],
 )
 def test_election_params_reject_invalid_structure(field: str, value: object) -> None:
@@ -67,6 +70,7 @@ def test_election_params_reject_invalid_structure(field: str, value: object) -> 
         "threshold": ThresholdParams(t=1, n=1),
         "vmax": 1,
         "params_hash": None,
+        "params_signature": None,
     }
     kwargs[field] = value
 

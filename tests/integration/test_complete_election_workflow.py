@@ -1,9 +1,12 @@
 import subprocess
 import sys
 
+import pytest
+
 from evoting.config import default_demo_profile
 from evoting.crypto.password import ScryptParameters
-from evoting.workflow import run_complete_election_workflow
+from evoting import workflow as workflow_module
+from evoting.workflow import WorkflowError, run_complete_election_workflow
 
 
 FAST_SCRYPT = ScryptParameters(n=2**4, r=1, p=1, length=32)
@@ -20,6 +23,7 @@ def test_complete_workflow_with_multiple_voters_replacement_tally_and_public_ver
     assert summary.replacement_performed is True
     assert summary.accepted_ballot_count == 4
     assert summary.old_versions_preserved is True
+    assert len(summary.params_signature) == 12
     assert len(summary.ballot_records) == 4
     assert sum(1 for record in summary.ballot_records if record.final) == 3
     assert any(record.version == 1 and not record.final for record in summary.ballot_records)
@@ -32,6 +36,7 @@ def test_complete_workflow_with_multiple_voters_replacement_tally_and_public_ver
     assert summary.verifications.receipts_valid is True
     assert summary.verifications.hash_chain_valid is True
     assert summary.verifications.public_log_valid is True
+    assert summary.verifications.params_signature_valid is True
     assert summary.verifications.tally_signature_valid is True
     assert summary.verifications.public_election_valid is True
     assert summary.verifications.all_passed is True
@@ -54,6 +59,13 @@ def test_complete_workflow_public_summary_contains_no_secrets_or_identity_vote_l
 
     for marker in forbidden_markers:
         assert marker not in rendered
+
+
+def test_complete_workflow_refuses_invalid_public_params_signature(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(workflow_module, "verify_public_params_signature", lambda _params: False)
+
+    with pytest.raises(WorkflowError):
+        run_complete_election_workflow(_profile(tmp_path))
 
 
 def test_demo_module_smoke_outputs_public_summary_without_secrets() -> None:

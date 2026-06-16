@@ -14,6 +14,8 @@ from evoting.actors.bulletin_board import (
     BulletinBoard,
     chain_link_hash,
     entry_hash,
+    public_params_hash,
+    public_params_message,
     verify_receipt,
 )
 from evoting.actors.registration_authority import RegistrationAuthority
@@ -579,6 +581,7 @@ def _fresh_authorization_fixture(
         threshold=ThresholdParams(t=3, n=5),
         vmax=3,
     )
+    params = _publish_params(params, ta_signature_key)
     return AuthorizedFixture(
         params=params,
         state=material.complete(tau_i),
@@ -681,6 +684,7 @@ def _multi_voter_authorization_fixture(
         threshold=ThresholdParams(t=3, n=5),
         vmax=3,
     )
+    params = _publish_params(params, ta_signature_key)
     fixture = AuthorizedFixture(
         params=params,
         state=states[0],
@@ -699,6 +703,14 @@ def _package(state: PseudonymousVoterState, params: ElectionParams, code: str) -
         code,
         allowed_list_codes=LIST_CODES,
         ta_public_key_pem=params.pk_ta_enc,
+    )
+
+
+def _publish_params(params: ElectionParams, signing_key: object) -> ElectionParams:
+    return replace(
+        params,
+        params_hash=public_params_hash(params),
+        params_signature=sign_message(signing_key, public_params_message(params)),
     )
 
 

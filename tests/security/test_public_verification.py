@@ -2,13 +2,17 @@ from dataclasses import dataclass, replace
 import base64
 import inspect
 
+import pytest
+
 from evoting.actors.bulletin_board import BulletinBoard
+from evoting.actors.bulletin_board import public_params_hash, public_params_message
 from evoting.actors.commissioners import CommissionerShare
 from evoting.actors.registration_authority import RegistrationAuthority
 from evoting.actors.tallying_authority import TaBlob, create_protected_blob, tally_election
 from evoting.actors import verifier as verifier_module
 from evoting.actors.verifier import (
     verify_individual_receipt,
+    verify_public_params_signature,
     verify_public_election,
     verify_tally_result,
     verify_tally_result_signature,
@@ -20,7 +24,7 @@ from evoting.crypto.encryption import (
     generate_encryption_private_key,
 )
 from evoting.crypto.password import ScryptParameters
-from evoting.crypto.signatures import generate_signature_private_key, signature_public_key_to_pem
+from evoting.crypto.signatures import generate_signature_private_key, sign_message, signature_public_key_to_pem
 from evoting.models import ElectionList, ElectionParams, TallyResult, ThresholdParams
 from evoting.serialization import canonical_bytes
 
@@ -81,6 +85,7 @@ def _fixture(tmp_path) -> PublicFixture:
         threshold=ThresholdParams(t=3, n=5),
         vmax=3,
     )
+    params = _publish_params(params, ta_sig_key)
     board = BulletinBoard(params, bb_key)
     receipts = []
     for index, code in enumerate(("LIST-001", "LIST-002"), start=1):
@@ -93,6 +98,17 @@ def _fixture(tmp_path) -> PublicFixture:
         receipts.append(board.submit_vote(package, now_ms=OPEN_MS + index))
     board.close(now_ms=params.closes_at_ms)
     return PublicFixture(params, board, blob, commissioners.shares, ta_sig_key, tuple(receipts))
+
+
+def _publish_params(params: ElectionParams, signing_key: object) -> ElectionParams:
+    params_hash = public_params_hash(params)
+    signature = sign_message(signing_key, public_params_message(params))
+    return replace(params, params_hash=params_hash, params_signature=signature)
+
+
+def _tamper_signed_params(params: ElectionParams, **changes) -> ElectionParams:
+    tampered = replace(params, **changes)
+    return replace(tampered, params_hash=public_params_hash(tampered))
 
 
 def _result(fixture: PublicFixture):
@@ -114,9 +130,48 @@ def test_public_verification_accepts_complete_log_and_result(tmp_path) -> None:
     assert close_state is not None
     result = _result(fixture)
 
+    assert verify_public_params_signature(fixture.params) is True
     assert verify_tally_result_signature(fixture.params.pk_ta_sig, result) is True
     assert verify_tally_result(fixture.params, fixture.board.records, close_state, result) is True
     assert verify_public_election(fixture.params, fixture.board.records, close_state, result) is True
+
+
+@pytest.mark.parametrize(
+    "tampered_params",
+    [
+        lambda params: _tamper_signed_params(params, election_id="election-2027"),
+        lambda params: _tamper_signed_params(
+            params,
+            lists=(
+                ElectionList(code="LIST-001", label="Lista Alterata"),
+                ElectionList(code="LIST-002", label="Lista Beta"),
+            ),
+        ),
+        lambda params: _tamper_signed_params(params, vmax=2),
+        lambda params: _tamper_signed_params(params, threshold=ThresholdParams(t=2, n=5)),
+        lambda params: _tamper_signed_params(
+            params,
+            pk_bb=signature_public_key_to_pem(generate_signature_private_key().public_key()),
+        ),
+    ],
+)
+def test_public_params_signature_rejects_tampered_public_parameters(tmp_path, tampered_params) -> None:
+    fixture = _fixture(tmp_path)
+
+    assert verify_public_params_signature(tampered_params(fixture.params)) is False
+
+
+def test_public_params_signature_rejects_wrong_signature_or_wrong_public_key(tmp_path) -> None:
+    fixture = _fixture(tmp_path)
+    wrong_key = generate_signature_private_key()
+    wrong_signature = sign_message(wrong_key, public_params_message(fixture.params))
+    wrong_public_key_params = _tamper_signed_params(
+        fixture.params,
+        pk_ta_sig=signature_public_key_to_pem(wrong_key.public_key()),
+    )
+
+    assert verify_public_params_signature(replace(fixture.params, params_signature=wrong_signature)) is False
+    assert verify_public_params_signature(wrong_public_key_params) is False
 
 
 def test_public_verification_rejects_deleted_reordered_duplicated_or_altered_records(tmp_path) -> None:

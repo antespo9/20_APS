@@ -60,7 +60,7 @@ python -m evoting.benchmarks.runner --profile smoke
 python -m evoting.benchmarks.runner --profile full
 ```
 
-Per scegliere una directory diversa:
+Per indicare esplicitamente la directory predefinita:
 
 ```powershell
 python -m evoting.benchmarks.runner --profile smoke --output runtime/benchmarks

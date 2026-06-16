@@ -11,6 +11,7 @@ import tempfile
 from evoting.actors.bulletin_board import BoardLogRecord, BulletinBoardError
 from evoting.actors.verifier import (
     select_final_ballot_entries,
+    verify_public_params_signature,
     verify_public_election,
     verify_public_log,
     verify_tally_result_signature,
@@ -71,6 +72,7 @@ class BoardRecordView:
 
 @dataclass(frozen=True, slots=True)
 class VerificationView:
+    params_signature_valid: bool
     ta_signature_valid: bool
     hash_chain_valid: bool
     public_log_valid: bool
@@ -79,7 +81,8 @@ class VerificationView:
     @property
     def all_passed(self) -> bool:
         return (
-            self.ta_signature_valid
+            self.params_signature_valid
+            and self.ta_signature_valid
             and self.hash_chain_valid
             and self.public_log_valid
             and self.public_election_valid
@@ -236,6 +239,8 @@ class DemoGuiController:
         close_state = setup.bulletin_board.close_state
         if close_state is None:
             raise GuiControllerError("chiudi l'elezione prima dello scrutinio")
+        if not verify_public_params_signature(setup.params):
+            raise GuiControllerError("firma dei parametri pubblici non valida")
         try:
             report = setup.tallying_authority.tally(
                 params=setup.params,
@@ -259,6 +264,7 @@ class DemoGuiController:
         if close_state is None:
             raise GuiControllerError("chiudi l'elezione prima della verifica")
         self._verification = VerificationView(
+            params_signature_valid=verify_public_params_signature(setup.params),
             ta_signature_valid=verify_tally_result_signature(setup.params.pk_ta_sig, self._tally_result),
             hash_chain_valid=setup.bulletin_board.verify_hash_chain(),
             public_log_valid=verify_public_log(setup.params, setup.bulletin_board.records, close_state),

@@ -26,7 +26,7 @@ def _format_summary(summary: CompleteWorkflowSummary) -> str:
         "Milestone 7A - demo workflow completo",
         f"Elezione: {summary.election_id}",
         f"Parametri: Vmax={summary.vmax}, soglia={summary.threshold[0]}/{summary.threshold[1]}, elettori={summary.voter_count}",
-        f"Setup: params={summary.params_hash}, blobTA={'presente' if summary.blob_ta_present else 'assente'}, quote={summary.commissioner_share_count}",
+        f"Setup: params={summary.params_hash}, firma params={summary.params_signature}, blobTA={'presente' if summary.blob_ta_present else 'assente'}, quote={summary.commissioner_share_count}",
         "",
         "Liste pubblicate:",
     ]
@@ -64,6 +64,7 @@ def _format_summary(summary: CompleteWorkflowSummary) -> str:
         ("ricevute", summary.verifications.receipts_valid),
         ("hash chain", summary.verifications.hash_chain_valid),
         ("registro pubblico", summary.verifications.public_log_valid),
+        ("firma parametri", summary.verifications.params_signature_valid),
         ("firma TA", summary.verifications.tally_signature_valid),
         ("verifica pubblica", summary.verifications.public_election_valid),
     )

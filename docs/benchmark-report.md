@@ -35,14 +35,16 @@ un sistema elettorale reale.
 
 ## Artefatti usati
 
-I risultati sono stati letti dagli artefatti locali gia' presenti sotto
+I risultati raw JSON e CSV sono generati localmente dal runner sotto
 `runtime/benchmarks/`:
 
 - `runtime/benchmarks/benchmark-full-20260616T161438Z.json`;
 - `runtime/benchmarks/benchmark-full-20260616T161438Z.csv`.
 
-I file JSON e CSV restano nella directory `runtime/` e non sono copiati nella
-documentazione.
+I file JSON e CSV restano nella directory `runtime/`, non sono versionati e non
+sono copiati nella documentazione. La tabella completa riportata in questo
+report contiene i dati necessari alla consegna senza richiedere gli artefatti
+raw locali.
 
 ## Risultati completi
 

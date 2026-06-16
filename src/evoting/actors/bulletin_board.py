@@ -33,6 +33,8 @@ from evoting.serialization import canonical_bytes
 
 BULLETIN_BOARD_ERROR_MESSAGE = "bulletin board validation failed"
 BB_GENESIS_CONTEXT = "BB-GENESIS"
+PUBLIC_PARAMS_CONTEXT = "ELECTION-PARAMS"
+PUBLIC_PARAMS_SCHEMA_VERSION = 1
 
 
 class BulletinBoardError(EvotingError):
@@ -375,25 +377,35 @@ def verify_close_state(public_key_pem: bytes, close_state: CloseState) -> bool:
     )
 
 
+def public_params_payload(params: ElectionParams) -> dict[str, object]:
+    if not isinstance(params, ElectionParams):
+        raise BulletinBoardError(BULLETIN_BOARD_ERROR_MESSAGE)
+    return {
+        "closes_at_ms": params.closes_at_ms,
+        "context": PUBLIC_PARAMS_CONTEXT,
+        "election_id": params.election_id,
+        "eligible_count": params.eligible_count,
+        "lists": params.lists,
+        "opens_at_ms": params.opens_at_ms,
+        "pk_bb": params.pk_bb,
+        "pk_ra": params.pk_ra,
+        "pk_ta_enc": params.pk_ta_enc,
+        "pk_ta_sig": params.pk_ta_sig,
+        "schema_version": PUBLIC_PARAMS_SCHEMA_VERSION,
+        "threshold": params.threshold,
+        "vmax": params.vmax,
+    }
+
+
+def public_params_message(params: ElectionParams) -> bytes:
+    return canonical_bytes(public_params_payload(params))
+
+
 def public_params_hash(params: ElectionParams) -> bytes:
     if not isinstance(params, ElectionParams):
         raise BulletinBoardError(BULLETIN_BOARD_ERROR_MESSAGE)
     return sha256_digest(
-        canonical_bytes(
-            {
-                "closes_at_ms": params.closes_at_ms,
-                "election_id": params.election_id,
-                "eligible_count": params.eligible_count,
-                "lists": params.lists,
-                "opens_at_ms": params.opens_at_ms,
-                "pk_bb": params.pk_bb,
-                "pk_ra": params.pk_ra,
-                "pk_ta_enc": params.pk_ta_enc,
-                "pk_ta_sig": params.pk_ta_sig,
-                "threshold": params.threshold,
-                "vmax": params.vmax,
-            }
-        )
+        public_params_message(params)
     )
 
 
@@ -488,6 +500,8 @@ def _require_positive_int(value: int) -> None:
 __all__ = [
     "BB_GENESIS_CONTEXT",
     "BULLETIN_BOARD_ERROR_MESSAGE",
+    "PUBLIC_PARAMS_CONTEXT",
+    "PUBLIC_PARAMS_SCHEMA_VERSION",
     "BoardLogRecord",
     "BulletinBoard",
     "BulletinBoardError",
@@ -497,7 +511,9 @@ __all__ = [
     "close_state_message",
     "entry_hash",
     "genesis_hash",
+    "public_params_message",
     "public_params_hash",
+    "public_params_payload",
     "receipt_message",
     "verify_ballot_signature",
     "verify_close_state",

@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from evoting.actors.bulletin_board import (
     BoardLogRecord,
     BulletinBoard,
+    public_params_message,
     public_params_hash,
 )
 from evoting.actors.commissioners import CommissionerSet
@@ -20,6 +21,7 @@ from evoting.actors.tallying_authority import TaBlob, TallyReport, TallyingAutho
 from evoting.actors.verifier import (
     select_final_ballot_entries,
     verify_individual_receipt,
+    verify_public_params_signature,
     verify_public_election,
     verify_public_log,
     verify_tally_result_signature,
@@ -36,7 +38,11 @@ from evoting.crypto.encryption import (
     encryption_public_key_to_pem,
     generate_encryption_private_key,
 )
-from evoting.crypto.signatures import generate_signature_private_key, signature_public_key_to_pem
+from evoting.crypto.signatures import (
+    generate_signature_private_key,
+    sign_message,
+    signature_public_key_to_pem,
+)
 from evoting.errors import EvotingError, ModelValidationError
 from evoting.models import Ack, BoardEntry, ElectionParams
 from evoting.persistence.stores import default_ra_store_path, default_voter_state_path
@@ -87,6 +93,7 @@ class WorkflowVerifications:
     receipts_valid: bool
     hash_chain_valid: bool
     public_log_valid: bool
+    params_signature_valid: bool
     tally_signature_valid: bool
     public_election_valid: bool
 
@@ -96,6 +103,7 @@ class WorkflowVerifications:
             self.receipts_valid
             and self.hash_chain_valid
             and self.public_log_valid
+            and self.params_signature_valid
             and self.tally_signature_valid
             and self.public_election_valid
         )
@@ -109,6 +117,7 @@ class CompleteWorkflowSummary:
     vmax: int
     threshold: tuple[int, int]
     params_hash: str
+    params_signature: str
     blob_ta_present: bool
     commissioner_share_count: int
     accepted_ballot_count: int
@@ -195,7 +204,13 @@ def setup_demo_election(
         vmax=selected_profile.vmax,
         params_hash=None,
     )
-    params = replace(params_without_hash, params_hash=public_params_hash(params_without_hash))
+    params_hash = public_params_hash(params_without_hash)
+    params_signature = sign_public_params(ta_signing_key, params_without_hash)
+    params = replace(
+        params_without_hash,
+        params_hash=params_hash,
+        params_signature=params_signature,
+    )
     bulletin_board = BulletinBoard(params, bb_key)
 
     return ElectionSetup(
@@ -219,6 +234,7 @@ def run_complete_election_workflow(
     """Execute the full demonstration election and return a public summary."""
 
     setup = setup_demo_election(profile, runtime_dir=runtime_dir)
+    _verify_setup_public_params(setup)
     credentials = _new_workflow_credentials(setup.profile)
     _register_demo_voters(setup, credentials)
     states = _authorize_and_persist_initial_states(setup, credentials)
@@ -285,6 +301,7 @@ def run_complete_election_workflow(
         vmax=setup.params.vmax,
         threshold=(setup.params.threshold.t, setup.params.threshold.n),
         params_hash=_short_hex(setup.params.params_hash),
+        params_signature=_short_hex(setup.params.params_signature),
         blob_ta_present=isinstance(setup.blob_ta, TaBlob),
         commissioner_share_count=len(setup.commissioner_set.shares),
         accepted_ballot_count=sum(1 for record in setup.bulletin_board.records if isinstance(record.entry, BoardEntry)),
@@ -311,6 +328,7 @@ def run_state_loss_workflow(
     """Execute the accepted-vote state-loss scenario without recovery."""
 
     setup = setup_demo_election(profile, runtime_dir=runtime_dir)
+    _verify_setup_public_params(setup)
     credentials = _new_workflow_credentials(setup.profile)
     first_voter = setup.profile.voters[0]
     _register_one_voter(setup, credentials, first_voter)
@@ -531,6 +549,7 @@ def _workflow_verifications(
         receipts_valid=receipts_valid,
         hash_chain_valid=setup.bulletin_board.verify_hash_chain(),
         public_log_valid=verify_public_log(setup.params, setup.bulletin_board.records, close_state),
+        params_signature_valid=verify_public_params_signature(setup.params),
         tally_signature_valid=verify_tally_result_signature(setup.params.pk_ta_sig, report.result),
         public_election_valid=verify_public_election(
             setup.params,
@@ -594,6 +613,15 @@ def _short_hex(value: bytes | None, length: int = 12) -> str:
     return value.hex()[:length]
 
 
+def sign_public_params(private_key: rsa.RSAPrivateKey, params: ElectionParams) -> bytes:
+    return sign_message(private_key, public_params_message(params))
+
+
+def _verify_setup_public_params(setup: ElectionSetup) -> None:
+    if not verify_public_params_signature(setup.params):
+        raise WorkflowError(WORKFLOW_ERROR_MESSAGE)
+
+
 __all__ = [
     "CompleteWorkflowSummary",
     "ElectionSetup",
@@ -603,6 +631,7 @@ __all__ = [
     "WorkflowVerifications",
     "WORKFLOW_ERROR_MESSAGE",
     "setup_demo_election",
+    "sign_public_params",
     "run_complete_election_workflow",
     "run_state_loss_workflow",
 ]
