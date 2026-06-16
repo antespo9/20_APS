@@ -44,8 +44,8 @@ Questo documento definisce i requisiti del prototipo WP4 per il protocollo di vo
 | SR-005 | Hash, pseudonimi, identificativi di scheda e hash chain devono usare SHA-256. |
 | SR-006 | Le password non devono essere memorizzate; la RA deve conservare solo verifier derivati con Scrypt, salt casuale distinto di 16 byte per utente e parametri memorizzati insieme al verifier. |
 | SR-007 | I parametri iniziali Scrypt devono essere `n = 2^15`, `r = 8`, `p = 1`, configurabili e persistiti con il verifier. |
-| SR-008 | La chiave privata di decifratura della TA deve essere serializzata e protetta in `blobTA` con AES-256-GCM. |
-| SR-009 | `blobTA` deve usare una chiave `Kwrap` di 32 byte, nonce casuale di 12 byte e AAD contenente almeno un identificatore di contesto e `election_id`. |
+| SR-008 | La chiave privata di decifratura della TA deve essere serializzata e protetta in `blobTA` con AES-256-CBC, padding PKCS7 e HMAC-SHA256 secondo composizione Encrypt-then-Authenticate. |
+| SR-009 | `blobTA` deve usare `Kwrap` come segreto casuale di 32 byte; da `Kwrap` devono essere derivate due sottochiavi distinte di 32 byte, `Kenc` e `Kmac`, tramite HKDF-SHA256 con contesto specifico del protocollo. `Kenc` cifra con AES-256-CBC e IV casuale; `Kmac` autentica una serializzazione canonica contenente almeno contesto, `election_id`, IV e ciphertext. Il MAC deve essere verificato prima della decifratura CBC e dell'unpadding PKCS7. `TaBlob` deve contenere IV, ciphertext e MAC, non nonce e tag GCM. Fernet non deve essere usato per `blobTA`. |
 | SR-010 | `Kwrap` deve essere suddivisa con una implementazione didattica dello schema standard di Shamir Secret Sharing sul campo primo `P = 2^521 - 1`. |
 | SR-011 | `Kwrap` deve essere interpretata come intero big-endian; ogni quota Shamir deve essere una coppia `(x, y)` con `x` distinto e non nullo. |
 | SR-012 | La ricostruzione Shamir deve usare interpolazione di Lagrange in zero e rifiutare quote duplicate, malformate o fuori campo. |
@@ -59,10 +59,10 @@ Questo documento definisce i requisiti del prototipo WP4 per il protocollo di vo
 | SR-020 | Il Bulletin Board deve trattare pacchetti identici gia' ricevuti come replay e non deve conteggiarli due volte. |
 | SR-021 | Le sostituzioni devono essere accettate solo prima di `CLOSE`, con stessa `pk_vote_i`, versione consecutiva e versione non superiore a `Vmax`. |
 | SR-022 | Il registro del Bulletin Board deve essere append-only e tamper-evident tramite hash chain. |
-| SR-023 | Errori di ciphertext malformati, tag AEAD errati e plaintext fuori dominio devono produrre errori applicativi generici, senza esporre dettagli interni delle eccezioni crittografiche. |
+| SR-023 | Errori di ciphertext malformati, MAC o tag di autenticazione errati e plaintext fuori dominio devono produrre errori applicativi generici, senza esporre dettagli interni delle eccezioni crittografiche. |
 | SR-024 | Lo scrutinio non deve pubblicare la corrispondenza tra singoli ciphertext e voti in chiaro. |
 | SR-025 | Il risultato deve esplicitare il limite di verificabilita' universale parziale: il pubblico verifica coerenza e firme, ma non una prova crittografica di corretta decifratura di ogni scheda. |
-| SR-026 | Il sistema deve usare casualita' crittograficamente sicura per segreti, chiavi, nonce, cifrature probabilistiche e coefficienti Shamir. |
+| SR-026 | Il sistema deve usare casualita' crittograficamente sicura per segreti, chiavi, IV, nonce, cifrature probabilistiche e coefficienti Shamir. |
 
 ## Requisiti di persistenza
 
@@ -71,7 +71,7 @@ Questo documento definisce i requisiti del prototipo WP4 per il protocollo di vo
 | PR-001 | Lo stato pseudonimo dell'elettore deve sopravvivere alla chiusura e riapertura dell'applicazione. |
 | PR-002 | Lo stato persistente dell'elettore deve includere, quando disponibili, `t_i`, `p_i`, coppia pseudonima, autorizzazione, versione corrente e ricevute. |
 | PR-003 | Lo stato persistente sensibile dell'elettore non deve essere salvato in chiaro. |
-| PR-004 | Lo stato persistente dell'elettore deve essere protetto con AES-256-GCM usando una chiave derivata con Scrypt da una password locale fittizia del prototipo. |
+| PR-004 | Lo stato persistente dell'elettore deve essere protetto esclusivamente con AES-256-GCM usando una chiave derivata con Scrypt da una password locale fornita dall'utente nel prototipo; la costruzione AES-256-CBC piu' HMAC-SHA256 e' specifica di `blobTA` e non e' richiesta per la persistenza elettore. |
 | PR-005 | Il contenitore cifrato dello stato elettore deve memorizzare salt e parametri KDF e usare AAD con contesto applicativo ed `election_id`. |
 | PR-006 | Se lo stato locale e' perso, assente, corrotto o non recuperabile, la RA non deve emettere una nuova autorizzazione per la stessa elezione. |
 | PR-007 | Se lo stato locale non e' recuperabile, l'elettore non deve poter creare una sostituzione; resta valida l'ultima scheda gia' accettata dal Bulletin Board. |
@@ -86,7 +86,7 @@ Questo documento definisce i requisiti del prototipo WP4 per il protocollo di vo
 | TR-003 | Devono esistere test di integrazione per il flusso completo di elezione. |
 | TR-004 | Devono esistere test di sicurezza e alterazione per messaggi modificati, firme errate, autorizzazioni contraffatte, hash chain alterata, replay, duplicati e messaggi non autorizzati. |
 | TR-005 | Devono esistere test di persistenza e recupero dello stato pseudonimo dell'elettore. |
-| TR-006 | Devono esistere test negativi per ciphertext malformati, plaintext fuori dominio, tag AEAD errati e quote Shamir duplicate, malformate o fuori campo. |
+| TR-006 | Devono esistere test negativi per ciphertext malformati, plaintext fuori dominio, MAC `blobTA` errati, tag AES-GCM errati per lo stato elettore e quote Shamir duplicate, malformate o fuori campo. |
 | TR-007 | Devono esistere test per la sostituzione del voto: versione consecutiva accettata, versione non consecutiva rifiutata, superamento di `Vmax` rifiutato, voto dopo `CLOSE` rifiutato. |
 | TR-008 | Devono esistere test per lo scrutinio: avvio solo dopo `CLOSE`, ricostruzione con almeno `t` quote, fallimento con meno di `t` quote e calcolo corretto dei totali. |
 | TR-009 | Devono esistere test per la verifica individuale della ricevuta e per la verifica pubblica del registro e del risultato. |

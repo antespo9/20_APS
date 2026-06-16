@@ -1,6 +1,6 @@
 # Matrice di tracciabilita'
 
-Stato iniziale di tutti gli elementi: `Da implementare`.
+Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallineare` indica requisiti gia' parzialmente coperti da codice o test precedenti, ma non ancora aggiornati alla specifica corrente del protocollo.
 
 | Requisito | Fase WP2 | Modulo previsto | Test previsto | Benchmark | Stato |
 | --- | --- | --- | --- | --- | --- |
@@ -37,8 +37,8 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | SR-005 | Fase 0, Fase 1, Fase 3 | `hashes.py` | `test_hashes.py` | Hash chain | Primitiva SHA-256 completata in Milestone 2; integrazione protocollo da implementare |
 | SR-006 | Fase 1 | `password.py`, `registration_authority.py` | `test_password.py`, `test_registration_authority.py` | Derivazione Scrypt | Completato in Milestone 4 per l'archivio RA; primitiva Scrypt completata in Milestone 2 |
 | SR-007 | Fase 1 | `password.py`, `config.py` | `test_password.py` | Derivazione Scrypt | Completato in Milestone 2 per parametri Scrypt persistibili |
-| SR-008 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_ta_blob_protection.py` | Apertura `blobTA` | Completato in Milestone 3 |
-| SR-009 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | `test_aead.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Completato in Milestone 3 |
+| SR-008 | Fase 0, Fase 5 | `ta_blob.py`, `tallying_authority.py` | `test_ta_blob.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Da riallineare: la documentazione richiede AES-256-CBC, PKCS7 e HMAC-SHA256; codice e test sono ancora basati sulla precedente implementazione AES-GCM |
+| SR-009 | Fase 0, Fase 5 | `ta_blob.py`, `tallying_authority.py` | `test_ta_blob.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Da riallineare: mancano nel codice e nei test HKDF-SHA256 da `Kwrap` a `Kenc`/`Kmac`, IV/MAC di `TaBlob` e verifica MAC prima di decifratura e unpadding |
 | SR-010 | Fase 0, Fase 5 | `shamir.py` | `test_shamir.py` | Generazione quote | Completato in Milestone 3 |
 | SR-011 | Fase 0, Fase 5 | `shamir.py` | `test_shamir.py` | Generazione quote | Completato in Milestone 3 |
 | SR-012 | Fase 5 | `shamir.py` | `test_shamir_negative.py` | Ricostruzione `Kwrap` | Completato in Milestone 3 |
@@ -52,7 +52,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | SR-020 | Fase 3 | `bulletin_board.py` | `test_bulletin_board_rules.py` | Verifica BB | Da implementare |
 | SR-021 | Fase 4 | `bulletin_board.py` | `test_vote_replacement.py` | Verifica BB | Da implementare |
 | SR-022 | Fase 3, Fase 5 | `bulletin_board.py`, `hashes.py` | `test_bulletin_board_tampering.py` | Hash chain | Da implementare |
-| SR-023 | Fase 5 | `errors.py`, `encryption.py`, `aead.py` | `test_crypto_tampering.py`, `test_tally_negative.py` | Non applicabile | Completato in Milestone 2 per errori RSA-OAEP e AES-GCM; plaintext fuori dominio da implementare |
+| SR-023 | Fase 5 | `errors.py`, `encryption.py`, `aead.py`, `ta_blob.py` | `test_crypto_tampering.py`, `test_ta_blob.py`, `test_tally_negative.py` | Non applicabile | Completato in Milestone 2 per errori RSA-OAEP e AES-GCM locale; errori MAC `blobTA` e plaintext fuori dominio da implementare o riallineare |
 | SR-024 | Fase 5 | `tallying_authority.py` | `test_tally_workflow.py` | Non applicabile | Da implementare |
 | SR-025 | Fase 6 | `verifier.py`, documentazione risultato | `test_public_verification.py` | Verifica pubblica | Da implementare |
 | SR-026 | Fase 0, Fase 1, Fase 2 | `crypto/*` | `test_crypto_tampering.py` | Operazioni crittografiche | Da implementare |
@@ -90,7 +90,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | AC-005 | Fase 4, Fase 5 | `bulletin_board.py`, `tallying_authority.py` | `test_vote_replacement.py`, `test_tally_workflow.py` | Scrutinio | Da implementare |
 | AC-006 | Fase 3, Fase 6 | `bulletin_board.py`, `verifier.py` | `test_bulletin_board_tampering.py` | Verifica pubblica registro | Da implementare |
 | AC-007 | Fase 5 | `shamir.py`, `tallying_authority.py` | `test_shamir.py`, `test_tally_negative.py` | Ricostruzione `Kwrap` | Da implementare |
-| AC-008 | Fase 5 | `shamir.py`, `aead.py` | `test_shamir_negative.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Completato in Milestone 3 |
+| AC-008 | Fase 5 | `shamir.py`, `ta_blob.py` | `test_shamir_negative.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Da riallineare: Shamir e controlli sulle quote restano coperti, ma l'apertura di `blobTA` deve passare da AES-GCM a CBC/HMAC/HKDF |
 | AC-009 | Fase 4 | `voter.py`, `registration_authority.py`, `bulletin_board.py` | `test_voter_state_persistence.py` | Non applicabile | Da implementare |
 | AC-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Da implementare |
 | AC-011 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Report benchmark | Da implementare |
@@ -99,10 +99,10 @@ Stato iniziale di tutti gli elementi: `Da implementare`.
 | DEC-003 | Fase 2, Fase 5 | `encryption.py` | Test cifratura | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
 | DEC-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | Test firme | Firma e verifica | Completato in Milestone 2 per la primitiva RSA-PSS |
 | DEC-005 | Fase 1 | `password.py` | Test password | Scrypt | Completato in Milestone 2 per verifier e derivazione Scrypt |
-| DEC-006 | Fase 0, Fase 5 | `aead.py`, `tallying_authority.py` | Test `blobTA` | Apertura `blobTA` | Completato in Milestone 3 |
+| DEC-006 | Fase 0, Fase 5 | `ta_blob.py`, `tallying_authority.py` | Test `blobTA` | Apertura `blobTA` | Da riallineare alla decisione corrente: AES-256-CBC, PKCS7, HMAC-SHA256, HKDF-SHA256, IV/ciphertext/MAC e nessun Fernet |
 | DEC-007 | Fase 1, Fase 4 | `voter_state.py` | Test persistenza | Apertura stato | Completato in Milestone 4 |
 | DEC-008 | Fase 0, Fase 5 | `shamir.py` | Test Shamir | Shamir | Completato in Milestone 3 |
 | DEC-009 | Fase 0 | `config.py` | Test configurazione | Profili | Da implementare |
 | DEC-010 | Fase 4 | `registration_authority.py`, `voter.py` | Test stato perso | Non applicabile | Completato in Milestone 4 per la mancata riemissione RA; sostituzione voto da implementare |
-| DEC-011 | Fase 5 | `errors.py`, `crypto/*` | Test errori generici | Non applicabile | Completato in Milestone 2 per primitive RSA-OAEP e AES-GCM |
+| DEC-011 | Fase 5 | `errors.py`, `crypto/*` | Test errori generici | Non applicabile | Completato in Milestone 2 per primitive RSA-OAEP e AES-GCM locale; gestione errori MAC `blobTA` da riallineare |
 | DEC-012 | Tutte le fasi | `stores.py`, `actors/*` | Test separazione dati | Non applicabile | Coperto in Milestone 4 per gli archivi introdotti; vincolo da mantenere nelle milestone successive |

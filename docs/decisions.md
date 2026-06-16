@@ -72,13 +72,13 @@ Limiti: password deboli, phishing o compromissione del dispositivo restano risch
 
 Possibile revisione futura: introdurre autenticazione multifattore o certificati personali come estensione.
 
-## DEC-006 - Protezione di `blobTA` con AES-256-GCM
+## DEC-006 - Protezione di `blobTA` con AES-256-CBC e HMAC-SHA256
 
 Contesto: la chiave privata di decifratura della TA non deve restare disponibile in chiaro.
 
-Decisione: `blobTA` protegge `sk_TA_dec` con AES-256-GCM, `Kwrap` di 32 byte, nonce casuale di 12 byte e AAD contenente almeno un identificatore di contesto e `election_id`.
+Decisione: `blobTA` protegge `sk_TA_dec` con AES-256-CBC, padding PKCS7 e HMAC-SHA256 secondo composizione Encrypt-then-Authenticate. `Kwrap` resta un segreto casuale di 32 byte distribuito tramite Shamir. Da `Kwrap` sono derivate due sottochiavi distinte di 32 byte, `Kenc` e `Kmac`, tramite HKDF-SHA256 con contesto specifico del protocollo. Il MAC autentica una serializzazione canonica contenente almeno contesto, `election_id`, IV e ciphertext. La verifica HMAC precede sempre decifratura CBC e unpadding PKCS7. `TaBlob` contiene IV, ciphertext e MAC, non nonce e tag GCM. Fernet non viene usato per `blobTA`.
 
-Motivazione: AES-GCM fornisce cifratura autenticata e rileva chiavi, nonce, AAD o ciphertext errati.
+Motivazione: il WP2 specifica per `blobTA` una cifratura simmetrica autenticata basata su AES-CBC e HMAC con chiavi indipendenti. Encrypt-then-Authenticate permette di rifiutare blob alterati prima della decifratura e dell'unpadding.
 
 Conseguenze: una ricostruzione Shamir errata non apre `blobTA` e produce un errore applicativo generico.
 
@@ -90,7 +90,7 @@ Possibile revisione futura: sostituire questo approccio con vera decifratura a s
 
 Contesto: lo stato pseudonimo deve sopravvivere alla riapertura dell'applicazione ma contiene segreti.
 
-Decisione: lo stato persistente dell'elettore usa AES-256-GCM con chiave derivata tramite Scrypt da una password locale fittizia del prototipo; salt e parametri KDF sono memorizzati nel contenitore cifrato; AAD include contesto applicativo ed `election_id`; nessun segreto persistente e' salvato in chiaro.
+Decisione: lo stato persistente dell'elettore usa AES-256-GCM con chiave derivata tramite Scrypt da una password locale fornita dall'utente nel prototipo; salt e parametri KDF sono memorizzati nel contenitore cifrato; AAD include contesto applicativo ed `election_id`; nessun segreto persistente e' salvato in chiaro. AES-256-GCM resta limitato a questa persistenza locale e non sostituisce la costruzione CBC piu' HMAC prevista per `blobTA`.
 
 Motivazione: il WP2 richiede recupero dello stesso stato pseudonimo per sostituzioni successive senza esporre segreti su disco.
 
@@ -146,7 +146,7 @@ Possibile revisione futura: progettare una procedura di recupero con garanzie ag
 
 Contesto: errori dettagliati possono trasformarsi in canali informativi.
 
-Decisione: ciphertext malformati, tag AEAD errati e plaintext fuori dominio producono errori applicativi generici; non devono essere esposti pubblicamente dettagli sulle eccezioni crittografiche interne.
+Decisione: ciphertext malformati, MAC `blobTA` errati, tag AES-GCM errati nella persistenza locale e plaintext fuori dominio producono errori applicativi generici; non devono essere esposti pubblicamente dettagli sulle eccezioni crittografiche interne.
 
 Motivazione: il sistema non deve comportarsi come oracolo durante raccolta, apertura di blob o scrutinio.
 

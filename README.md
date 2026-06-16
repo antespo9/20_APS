@@ -16,4 +16,4 @@ descritto nel Project Work di Algoritmi e Protocolli per la Sicurezza.
 - Git
 
 Il codice applicativo si trova in src/evoting.
-I test si trovano nella cartella 	ests.
+I test si trovano nella cartella tests.

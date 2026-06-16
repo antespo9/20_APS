@@ -9,7 +9,7 @@ Il prototipo WP4 e' una simulazione locale e stand-alone del protocollo di voto 
 | Registration Authority | Autenticazione nominativa, verifica degli aventi diritto, emissione di una sola autorizzazione pseudonima per elezione. | Identita' reali, verifier password, collegamento identita'-pseudonimo conservato solo nel dominio RA, chiave privata RA. | Autorizzazioni pseudonime firmate. |
 | Bulletin Board | Validazione pacchetti, registro append-only, hash chain, ricevute, chiusura del registro. | Chiave privata BB. Non conserva identita' reali. | Entry pubbliche, ricevute, `h_close`, firma di chiusura. |
 | Tallying Authority | Generazione chiavi TA, protezione di `sk_TA_dec`, scrutinio dopo chiusura, pubblicazione risultato firmato. | `sk_TA_dec`, `sk_TA_sig`, `blobTA`, `Kwrap` solo temporaneamente durante setup o scrutinio. | Chiavi pubbliche TA, risultato firmato. |
-| Elettore | Generazione stato pseudonimo, richiesta autorizzazione, cifratura voto, firma pacchetto, verifica individuale. | Password locale fittizia del prototipo, `t_i`, `sk_vote_i`, stato cifrato, ricevute locali. | `p_i`, `pk_vote_i`, schede cifrate, firme pseudonime. |
+| Elettore | Generazione stato pseudonimo, richiesta autorizzazione, cifratura voto, firma pacchetto, verifica individuale. | Password locale fornita dall'utente nel prototipo, `t_i`, `sk_vote_i`, stato cifrato, ricevute locali. | `p_i`, `pk_vote_i`, schede cifrate, firme pseudonime. |
 | Commissari | Custodia delle quote Shamir e cooperazione allo scrutinio. | Quote Shamir individuali. | Nessun dato pubblico necessario nella versione base, salvo partecipazione alla procedura di scrutinio simulata. |
 | Verificatore pubblico | Controllo di firme, hash chain, versioni, unicita' delle schede finali e coerenza numerica. | Nessuno. | Rapporto di verifica locale. |
 
@@ -30,6 +30,7 @@ src/evoting/
     encryption.py
     password.py
     aead.py
+    ta_blob.py
     shamir.py
   actors/
     registration_authority.py
@@ -57,7 +58,8 @@ Responsabilita' dei moduli:
 | `crypto/signatures.py` | RSA-PSS con SHA-256 per firme RA, BB, TA ed elettore pseudonimo. |
 | `crypto/encryption.py` | RSA-OAEP con SHA-256 per cifratura e decifratura delle schede. |
 | `crypto/password.py` | Scrypt per verifier RA e chiave locale di protezione dello stato elettore. |
-| `crypto/aead.py` | AES-256-GCM per `blobTA` e contenitori cifrati locali. |
+| `crypto/aead.py` | AES-256-GCM esclusivamente per contenitori cifrati locali, incluso lo stato persistente dell'elettore. |
+| `crypto/ta_blob.py` | Protezione di `blobTA` con AES-256-CBC, padding PKCS7 e HMAC-SHA256 in composizione Encrypt-then-Authenticate; derivazione di `Kenc` e `Kmac` da `Kwrap` tramite HKDF-SHA256. |
 | `crypto/shamir.py` | Implementazione didattica dello schema standard di Shamir su `P = 2^521 - 1`. |
 | `actors/registration_authority.py` | Archivio aventi diritto, autenticazione simulata, emissione e rifiuto autorizzazioni. |
 | `actors/bulletin_board.py` | Regole di accettazione e rifiuto, append-only log, hash chain, ricevute e chiusura. |
@@ -137,6 +139,31 @@ Dati riservati:
 - stato persistente dell'elettore;
 - voti in chiaro prima o durante lo scrutinio.
 
+## Protezione di `blobTA`
+
+`blobTA` protegge la chiave privata di decifratura della TA serializzata. La
+costruzione prevista e' specifica di questo blob e non usa Fernet. `Kwrap`
+resta un segreto casuale di 32 byte distribuito ai commissari tramite Shamir.
+Quando almeno `t` quote ricostruiscono `Kwrap`, la TA deriva due sottochiavi
+distinte di 32 byte, `Kenc` e `Kmac`, tramite HKDF-SHA256 con contesto
+specifico del protocollo.
+
+`Kenc` e' usata con AES-256-CBC e padding PKCS7. `Kmac` e' usata con
+HMAC-SHA256 secondo Encrypt-then-Authenticate. Il MAC autentica una
+serializzazione canonica contenente almeno contesto, `election_id`, IV e
+ciphertext. L'apertura di `blobTA` verifica il MAC prima di eseguire la
+decifratura CBC e prima dell'unpadding PKCS7.
+
+La struttura logica di `TaBlob` deve quindi contenere IV, ciphertext e MAC,
+oltre ai metadati necessari come `election_id`, contesto e parametri di soglia.
+Non deve usare i campi nonce e tag propri della precedente rappresentazione
+AES-GCM.
+
+AES-256-GCM resta utilizzato per la persistenza cifrata dello stato locale
+dell'elettore, con chiave derivata dalla password locale tramite Scrypt e AAD
+contestuale. La costruzione AES-256-CBC piu' HMAC-SHA256 non e' richiesta per
+lo stato elettore.
+
 ## Confini di fiducia
 
 | Confine | Assunzione | Rischio residuo |
@@ -158,7 +185,7 @@ Dati riservati:
 6. Raccolta BB: il BB verifica autorizzazione, firma, periodo, versione e replay; se il pacchetto e' valido, aggiunge una entry append-only e rilascia ricevuta.
 7. Sostituzione: prima di `CLOSE`, l'elettore puo' inviare una nuova versione consecutiva fino a `Vmax`; le versioni precedenti restano pubblicate.
 8. Chiusura: il BB aggiunge `CLOSE`, calcola `h_close` e firma lo stato finale.
-9. Scrutinio: la TA seleziona le schede finali, ricostruisce temporaneamente `Kwrap` con almeno `t` quote, apre `blobTA`, decifra, classifica anomalie e calcola i totali.
+9. Scrutinio: la TA seleziona le schede finali, ricostruisce temporaneamente `Kwrap` con almeno `t` quote, deriva `Kenc` e `Kmac`, verifica il MAC di `blobTA`, apre `blobTA` solo dopo tale verifica, decifra, classifica anomalie e calcola i totali.
 10. Pubblicazione: la TA firma il risultato vincolato a `h_close`.
 11. Verifica individuale: l'elettore ricalcola `p_i`, individua la entry, verifica ricevuta e inclusione nella hash chain.
 12. Verifica pubblica: chiunque verifica firme, hash chain, versioni, unicita' delle schede finali e coerenza numerica.

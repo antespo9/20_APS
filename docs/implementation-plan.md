@@ -81,7 +81,7 @@ Benchmark associati:
 
 ## Milestone 2 - Primitive crittografiche di base
 
-Obiettivo: implementare wrapper coerenti per hash, firme, cifratura del voto, Scrypt e AES-GCM.
+Obiettivo: implementare wrapper coerenti per hash, firme, cifratura del voto, Scrypt e AES-GCM per i contenitori locali che lo richiedono, in particolare lo stato persistente dell'elettore.
 
 File da creare o modificare:
 
@@ -105,7 +105,7 @@ Criteri di completamento:
 - RSA-OAEP usa SHA-256 per OAEP e MGF1;
 - RSA-PSS usa SHA-256, MGF1 SHA-256 e salt massimo consentito;
 - Scrypt usa salt distinti e parametri persistibili;
-- AES-256-GCM usa nonce casuale da 12 byte e AAD contestuale;
+- AES-256-GCM usa nonce casuale da 12 byte e AAD contestuale per la persistenza locale dell'elettore;
 - errori crittografici interni sono convertiti in errori applicativi generici.
 
 Test richiesti:
@@ -114,7 +114,7 @@ Test richiesti:
 - cifrature dello stesso voto diverse per casualita' fresca;
 - decifratura di ciphertext alterati rifiutata;
 - verifier password corretto e password errata rifiutata;
-- tag AEAD o AAD alterati rifiutati.
+- tag AES-GCM o AAD alterati rifiutati per i contenitori locali.
 
 Comandi di verifica:
 
@@ -136,9 +136,11 @@ Obiettivo: implementare la custodia distribuita di `Kwrap` e la protezione della
 File da creare o modificare:
 
 - `src/evoting/crypto/shamir.py`
+- `src/evoting/crypto/ta_blob.py`
 - `src/evoting/actors/commissioners.py`
 - `src/evoting/actors/tallying_authority.py`
 - `tests/unit/test_shamir.py`
+- `tests/unit/test_ta_blob.py`
 - `tests/security/test_shamir_negative.py`
 - `tests/integration/test_ta_blob_protection.py`
 
@@ -151,13 +153,21 @@ Criteri di completamento:
 - quote duplicate, nulle, malformate o fuori campo sono rifiutate;
 - almeno `t` quote valide ricostruiscono `Kwrap`;
 - meno di `t` quote non consentono di aprire `blobTA`;
-- una quota alterata produce fallimento AEAD su `blobTA`.
+- `Kwrap` resta un segreto casuale di 32 byte e da esso sono derivate `Kenc` e `Kmac`, entrambe di 32 byte, tramite HKDF-SHA256 con contesto specifico del protocollo;
+- `blobTA` usa AES-256-CBC con padding PKCS7 e HMAC-SHA256 secondo Encrypt-then-Authenticate;
+- il MAC autentica una serializzazione canonica contenente almeno contesto, `election_id`, IV e ciphertext;
+- l'apertura verifica il MAC prima della decifratura CBC e dell'unpadding PKCS7;
+- `TaBlob` contiene IV, ciphertext e MAC, non nonce e tag GCM;
+- Fernet non e' usato per `blobTA`;
+- una quota alterata produce fallimento del MAC su `blobTA`.
 
 Test richiesti:
 
 - ricostruzione positiva con soglia;
 - fallimento sotto soglia;
 - rifiuto input non validi;
+- derivazione distinta di `Kenc` e `Kmac` da `Kwrap` tramite HKDF-SHA256;
+- rifiuto di MAC, IV, ciphertext o contesto alterati prima della decifratura e dell'unpadding;
 - apertura `blobTA` solo con `Kwrap` corretta.
 
 Comandi di verifica:
