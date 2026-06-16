@@ -33,3 +33,26 @@ headless:
 ```powershell
 python -m evoting.gui.app --check
 ```
+
+## Benchmark prestazionali
+
+I benchmark WP4 misurano operazioni gia' implementate senza modificare il
+protocollo. Il profilo `smoke` e' pensato per controlli rapidi e test
+automatici; il profilo `full` usa piu' ripetizioni e scale maggiori per la
+raccolta dei risultati.
+
+```powershell
+python -m evoting.benchmarks.runner --profile smoke
+python -m evoting.benchmarks.runner --profile full
+```
+
+Per scegliere una directory diversa:
+
+```powershell
+python -m evoting.benchmarks.runner --profile smoke --output runtime/benchmarks
+```
+
+Il runner stampa una tabella testuale e salva JSON e CSV sotto
+`runtime/benchmarks/` per impostazione predefinita. I risultati contengono solo
+nomi tecnici delle operazioni, tempi aggregati, conteggi, scale di input e
+dimensioni dei messaggi.
