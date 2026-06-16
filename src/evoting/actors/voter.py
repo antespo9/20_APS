@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 import os
 
+from evoting.crypto.encryption import encrypt_vote, load_encryption_public_key
 from evoting.crypto.hashes import SHA256_DIGEST_SIZE, sha256_digest
 from evoting.crypto.signatures import (
     generate_signature_private_key,
+    load_signature_private_key,
+    sign_message,
     signature_private_key_to_pem,
     signature_public_key_to_pem,
 )
 from evoting.errors import ModelValidationError
-from evoting.models import AuthorizationRequest
+from evoting.models import Ack, AuthorizationRequest, VoteMessage, VotePackage
+from evoting.serialization import canonical_bytes
 
 
 VOTER_SECRET_SIZE = 32
@@ -109,6 +114,86 @@ def generate_authorization_material(election_id: str) -> VoterAuthorizationMater
     )
 
 
+def prepare_vote_package(
+    state: PseudonymousVoterState,
+    list_code: str,
+    *,
+    allowed_list_codes: Iterable[str],
+    ta_public_key_pem: bytes,
+) -> VotePackage:
+    """Encrypt and sign a vote package without mutating local voter state."""
+
+    if not isinstance(state, PseudonymousVoterState):
+        raise ModelValidationError("state must be PseudonymousVoterState")
+    _validate_list_choice(list_code, allowed_list_codes)
+    public_key = load_encryption_public_key(ta_public_key_pem)
+    ciphertext = encrypt_vote(public_key, list_code.encode("utf-8"))
+    version = state.current_vote_version + 1
+    message = VoteMessage(
+        election_id=state.election_id,
+        p_i=state.p_i,
+        c=ciphertext,
+        pk_vote_i=state.pk_vote_i,
+        v_i=version,
+    )
+    private_key = load_signature_private_key(state.sk_vote_i)
+    signature = sign_message(private_key, canonical_bytes(message))
+    return VotePackage(
+        c=ciphertext,
+        p_i=state.p_i,
+        pk_vote_i=state.pk_vote_i,
+        tau_i=state.tau_i,
+        v_i=version,
+        sigma_i=signature,
+    )
+
+
+def apply_accepted_receipt(
+    state: PseudonymousVoterState,
+    package: VotePackage,
+    receipt: Ack,
+    *,
+    bb_public_key_pem: bytes,
+) -> PseudonymousVoterState:
+    """Return updated state only after a coherent signed BB receipt verifies."""
+
+    if not isinstance(state, PseudonymousVoterState):
+        raise ModelValidationError("state must be PseudonymousVoterState")
+    if not isinstance(package, VotePackage):
+        raise ModelValidationError("package must be VotePackage")
+    if not isinstance(receipt, Ack):
+        raise ModelValidationError("receipt must be Ack")
+    if (
+        package.p_i != state.p_i
+        or package.pk_vote_i != state.pk_vote_i
+        or package.tau_i != state.tau_i
+        or package.v_i != state.current_vote_version + 1
+    ):
+        raise ModelValidationError("receipt does not match voter state")
+
+    from evoting.actors.bulletin_board import ballot_rid, verify_receipt
+
+    expected_rid = ballot_rid(state.election_id, package)
+    if not verify_receipt(
+        bb_public_key_pem,
+        receipt,
+        expected_election_id=state.election_id,
+        expected_rid=expected_rid,
+    ):
+        raise ModelValidationError("receipt does not verify")
+
+    return PseudonymousVoterState(
+        election_id=state.election_id,
+        t_i=state.t_i,
+        p_i=state.p_i,
+        pk_vote_i=state.pk_vote_i,
+        sk_vote_i=state.sk_vote_i,
+        tau_i=state.tau_i,
+        current_vote_version=package.v_i,
+        receipts=state.receipts + (canonical_bytes(receipt),),
+    )
+
+
 def _validate_identifier(value: str, field_name: str) -> None:
     if not isinstance(value, str) or not value.strip():
         raise ModelValidationError(f"{field_name} must be a non-empty protocol identifier")
@@ -124,9 +209,24 @@ def _validate_pseudonym(value: bytes) -> None:
         raise ModelValidationError(f"p_i must be {SHA256_DIGEST_SIZE} bytes")
 
 
+def _validate_list_choice(list_code: str, allowed_list_codes: Iterable[str]) -> None:
+    if not isinstance(list_code, str) or not list_code:
+        raise ModelValidationError("list_code must be a non-empty list code")
+    try:
+        allowed = tuple(allowed_list_codes)
+    except TypeError as exc:
+        raise ModelValidationError("allowed_list_codes must be iterable") from exc
+    if not allowed or not all(isinstance(code, str) and code for code in allowed):
+        raise ModelValidationError("allowed_list_codes must contain non-empty list codes")
+    if list_code not in allowed:
+        raise ModelValidationError("list_code is not allowed")
+
+
 __all__ = [
     "PseudonymousVoterState",
     "VOTER_SECRET_SIZE",
     "VoterAuthorizationMaterial",
+    "apply_accepted_receipt",
     "generate_authorization_material",
+    "prepare_vote_package",
 ]
