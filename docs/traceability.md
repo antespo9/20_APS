@@ -4,10 +4,10 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 
 | Requisito | Fase WP2 | Modulo previsto | Test previsto | Benchmark | Stato |
 | --- | --- | --- | --- | --- | --- |
-| FR-001 | Tutte le fasi | `actors/*` | `test_complete_election_workflow.py` | Non applicabile | Da implementare |
+| FR-001 | Tutte le fasi | `actors/*`, `workflow.py` | `test_complete_election_workflow.py` | Non applicabile | Completato in Milestone 7A: il workflow end-to-end simula RA, BB, TA, elettori, commissari e verificatore pubblico tramite chiamate locali |
 | FR-002 | Fase 0, Fase 5 | `models.py`, `config.py`, `tallying_authority.py` | `test_tally_workflow.py` | Scrutinio | Completato in Milestone 6 per lo scrutinio: i codici lista ammessi sono conteggiati, le liste con zero voti restano nel risultato e i codici fuori dominio sono classificati come anomalie |
-| FR-003 | Fase 0 | `models.py`, `config.py` | `test_models.py` | Dimensione parametri | Da implementare |
-| FR-004 | Fase 0, sintesi chiavi | `crypto/signatures.py`, `crypto/encryption.py` | `test_signatures.py`, `test_encryption.py` | Generazione chiavi separata | Da implementare |
+| FR-003 | Fase 0 | `models.py`, `config.py`, `workflow.py` | `test_config.py` | Dimensione parametri | Completato in Milestone 7A: il profilo demo e il setup generano parametri pubblici coerenti con `params_hash`, liste, periodo, chiavi pubbliche, soglia, `Vmax` e numero aventi diritto |
+| FR-004 | Fase 0, sintesi chiavi | `crypto/signatures.py`, `crypto/encryption.py`, `workflow.py` | `test_config.py`, `test_signatures.py`, `test_encryption.py` | Generazione chiavi separata | Completato in Milestone 7A per il setup coordinato: RA, BB, TA-cifratura e TA-firma usano chiavi pubbliche distinte generate con le primitive gia' testate |
 | FR-005 | Fase 1 | `registration_authority.py`, `password.py` | `test_registration_authority.py` | Emissione autorizzazione RA | Completato in Milestone 4 |
 | FR-006 | Fase 1 | `registration_authority.py` | `test_registration_authority.py` | Emissione autorizzazione RA | Completato in Milestone 4 |
 | FR-007 | Fase 1 | `voter.py`, `hashes.py` | `test_voter_state_persistence.py` | Non applicabile | Completato in Milestone 4 |
@@ -27,8 +27,8 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | FR-021 | Fase 5 | `tallying_authority.py`, `signatures.py` | `test_public_verification.py` | Dimensione risultato | Completato in Milestone 6: il risultato contiene `election_id`, `h_close`, totali per lista, conteggi finali/validi/anomali ed e' firmato dalla TA |
 | FR-022 | Fase 6 | `voter.py`, `verifier.py` | `test_public_verification.py` | Verifica ricevuta | Completato in Milestone 6: il verificatore controlla firma BB, `election_id`, indice, `RID`, hash di catena e inclusione nel registro verificato senza rivelare il voto |
 | FR-023 | Fase 6 | `verifier.py` | `test_public_verification.py` | Verifica pubblica registro | Completato in Milestone 6: il verificatore controlla genesis, indici, hash chain, RID, firme RA/BB/pseudonime/TA, versioni, selezione finale e coerenza numerica |
-| FR-024 | Fase 0 | `config.py`, `models.py` | `test_models.py` | Profili benchmark | Da implementare |
-| FR-025 | Tutte le fasi | `actors/*` | `test_complete_election_workflow.py` | Non applicabile | Da implementare |
+| FR-024 | Fase 0 | `config.py`, `models.py` | `test_config.py` | Profili benchmark | Completato in Milestone 7A per il profilo dimostrativo: `Vmax`, `t` e `n` sono configurabili e il default usa `Vmax = 3`, `t = 3`, `n = 5` |
+| FR-025 | Tutte le fasi | `actors/*`, `workflow.py` | `test_complete_election_workflow.py` | Non applicabile | Completato in Milestone 7A: il workflow completo resta stand-alone e usa solo chiamate locali tra moduli |
 | FR-026 | Perimetro WP4 | Revisione architetturale | Verifica repository | Non applicabile | Da implementare |
 | SR-001 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
 | SR-002 | Tutte le fasi | `serialization.py` | `test_serialization.py` | Dimensione messaggi canonici | Completato in Milestone 1 |
@@ -45,7 +45,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | SR-013 | Fase 0, Fase 5 | `shamir.py` | Revisione documentazione modulo | Non applicabile | Completato in Milestone 3 |
 | SR-014 | Fase 3 | `bulletin_board.py`, `stores.py` | `test_bulletin_board_rules.py` | Non applicabile | Completato in Milestone 5 per il BB in memoria: il registro pubblico non contiene identita' reali |
 | SR-015 | Fase 5 | `tallying_authority.py`, `stores.py` | `test_tally_workflow.py` | Non applicabile | Completato in Milestone 6 per lo scrutinio locale: la TA opera sui record pubblici del BB, quote commissariali e `blobTA`, senza ricevere identita' reali |
-| SR-016 | Tutte le fasi | `stores.py`, test fixture | Test di assenza dati collegati | Non applicabile | Da implementare |
+| SR-016 | Tutte le fasi | `workflow.py`, `demo.py`, test fixture | `test_complete_election_workflow.py` | Non applicabile | Coperto in Milestone 7A per riepilogo pubblico e output demo: i test verificano l'assenza di password, chiavi private, identificativi elettore e marker di quote o segreti nel riepilogo/output |
 | SR-017 | Fase 1, Fase 3 | `registration_authority.py`, `signatures.py` | `test_authorization_tampering.py` | Verifica firma RA | Completato in Milestone 4 per autorizzazioni RA |
 | SR-018 | Fase 2, Fase 3 | `voter.py`, `signatures.py` | `test_voter_ballot.py`, `test_bulletin_board_tampering.py` | Verifica firma pseudonima | Completato in Milestone 5: pacchetti alterati o firme pseudonime errate sono rifiutati |
 | SR-019 | Fase 2, Fase 4 | `bulletin_board.py` | `test_bulletin_board_rules.py`, `test_vote_replacement.py` | Non applicabile | Completato in Milestone 5: il BB richiede firma pseudonima valida e rifiuta cambi di chiave per lo stesso `p_i` |
@@ -62,19 +62,19 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | PR-004 | Fase 1, Fase 4 | `voter_state.py`, `password.py` | `test_voter_state_persistence.py` | Derivazione Scrypt | Completato in Milestone 4 |
 | PR-005 | Fase 1, Fase 4 | `voter_state.py` | `test_voter_state_persistence.py` | Apertura stato cifrato | Completato in Milestone 4 |
 | PR-006 | Fase 1, Fase 4 | `registration_authority.py`, `voter.py` | `test_voter_state_persistence.py` | Non applicabile | Completato in Milestone 4 |
-| PR-007 | Fase 4 | `voter.py`, `bulletin_board.py` | `test_voter_state_persistence.py`, `test_vote_replacement.py` | Non applicabile | Completato in Milestone 5 per la sostituzione: una nuova versione richiede lo stato pseudonimo recuperato; la scheda gia' accettata resta valida |
+| PR-007 | Fase 4 | `voter.py`, `bulletin_board.py`, `workflow.py` | `test_voter_state_persistence.py`, `test_vote_replacement.py`, `test_state_loss_workflow.py` | Non applicabile | Completato in Milestone 7A end-to-end: dopo perdita o corruzione dello stato locale la sostituzione non viene prodotta, la RA rifiuta una seconda autorizzazione e la scheda gia' accettata resta scrutinata |
 | PR-008 | Perimetro runtime | `stores.py` | Verifica repository | Non applicabile | Completato in Milestone 4 per gli archivi introdotti |
-| TR-001 | Tutte le fasi | `tests/*` | Suite completa | Non applicabile | Coperto per Milestone 5 con test unitari, di sicurezza e integrazione dedicati |
+| TR-001 | Tutte le fasi | `tests/*` | Suite completa | Non applicabile | Coperto fino a Milestone 7A con test unitari, integrazione, sicurezza, persistenza, workflow completo e smoke demo |
 | TR-002 | Tutte le fasi | `tests/unit/*` | Suite unitaria | Non applicabile | Coperto per Milestone 5 da `test_voter_ballot.py` e `test_bulletin_board_rules.py` |
-| TR-003 | Tutte le fasi | `tests/integration/*` | Suite integrazione | Non applicabile | Coperto per Milestone 5 da `test_vote_replacement.py` |
+| TR-003 | Tutte le fasi | `tests/integration/*` | Suite integrazione | Non applicabile | Coperto in Milestone 7A anche da `test_complete_election_workflow.py` e `test_state_loss_workflow.py` |
 | TR-004 | Fase 1, Fase 3, Fase 6 | `tests/security/*` | Test di alterazione | Non applicabile | Coperto per Milestone 5 da `test_bulletin_board_tampering.py` |
 | TR-005 | Fase 1, Fase 4 | `tests/integration/test_voter_state_persistence.py` | Test persistenza | Non applicabile | Completato in Milestone 4 |
 | TR-006 | Fase 5 | `tests/security/*` | Test negativi crypto e Shamir | Non applicabile | Completato per Milestone 6 con test negativi su soglia Shamir, quote/blob alterati e anomalie di ciphertext/plaintext nello scrutinio |
 | TR-007 | Fase 4 | `tests/integration/test_vote_replacement.py` | Test sostituzione | Non applicabile | Completato in Milestone 5 |
 | TR-008 | Fase 5 | `tests/integration/test_tally_workflow.py` | Test scrutinio | Non applicabile | Completato in Milestone 6 con test di scrutinio corretto, sostituzioni, decifratura delle sole versioni finali, liste con zero voti e coerenza dei conteggi |
 | TR-009 | Fase 6 | `tests/integration/test_public_verification.py` | Test verifica | Non applicabile | Completato in Milestone 6 con test unitari e di sicurezza per ricevute, registro pubblico, risultato firmato e alterazioni |
-| TR-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Da implementare |
-| TR-011 | Tutte le fasi | Processo di milestone | Suite applicabile | Non applicabile | Da implementare |
+| TR-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Coperto operativamente in Milestone 7A con esecuzione della suite completa |
+| TR-011 | Tutte le fasi | Processo di milestone | Suite applicabile | Non applicabile | Coperto operativamente in Milestone 7A: la milestone viene considerata completa solo con test applicabili superati |
 | BR-001 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Tutti i benchmark | Da implementare |
 | BR-002 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Report completo | Da implementare |
 | BR-003 | Fase 1, Fase 2, Fase 3 | `benchmarks/runner.py` | `test_benchmark_smoke.py` | RA, cifratura, firma, BB, hash, ricevuta | Da implementare |
@@ -83,7 +83,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | BR-006 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Key generation separata | Da implementare |
 | BR-007 | Fase 2 | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Costo lato elettore | Da implementare |
 | BR-008 | Fase 5, Fase 6 | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Scalabilita' lineare | Da implementare |
-| AC-001 | Tutte le fasi | `actors/*` | `test_complete_election_workflow.py` | Tutti i benchmark principali | Da implementare |
+| AC-001 | Tutte le fasi | `actors/*`, `workflow.py`, `demo.py` | `test_complete_election_workflow.py` | Tutti i benchmark principali | Completato in Milestone 7A per il workflow dimostrativo: configura, autentica, autorizza, registra, sostituisce, chiude, scrutinia e verifica un'elezione locale |
 | AC-002 | Fase 1 | `registration_authority.py` | `test_registration_authority.py` | Emissione autorizzazione RA | Completato in Milestone 4 |
 | AC-003 | Fase 3 | `bulletin_board.py` | `test_bulletin_board_rules.py` | Verifica BB, ricevuta | Completato in Milestone 5 |
 | AC-004 | Fase 3, Fase 4 | `bulletin_board.py` | `test_bulletin_board_rules.py`, `test_bulletin_board_tampering.py`, `test_vote_replacement.py` | Verifica BB | Completato in Milestone 5 |
@@ -91,10 +91,10 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | AC-006 | Fase 3, Fase 6 | `bulletin_board.py`, `verifier.py` | `test_bulletin_board_tampering.py` | Verifica pubblica registro | Completato in Milestone 6: il verificatore pubblico rileva cancellazione, riordinamento, duplicazione e alterazione dei record |
 | AC-007 | Fase 5 | `shamir.py`, `tallying_authority.py` | `test_shamir.py`, `test_tally_negative.py` | Ricostruzione `Kwrap` | Completato in Milestone 6: lo scrutinio fallisce con meno di `t` quote e riesce con almeno `t` quote valide |
 | AC-008 | Fase 5 | `shamir.py`, `ta_blob.py` | `test_shamir_negative.py`, `test_ta_blob_protection.py` | Apertura `blobTA` | Completato nella correzione `blobTA`: una quota alterata produce una `Kwrap` errata e l'apertura CBC/HMAC/HKDF fallisce con errore applicativo generico |
-| AC-009 | Fase 4 | `voter.py`, `registration_authority.py`, `bulletin_board.py` | `test_voter_state_persistence.py` | Non applicabile | Da implementare |
-| AC-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Da implementare |
+| AC-009 | Fase 4 | `voter.py`, `registration_authority.py`, `bulletin_board.py`, `workflow.py` | `test_state_loss_workflow.py`, `test_voter_state_persistence.py` | Non applicabile | Completato in Milestone 7A: perdita o corruzione dello stato locale impedisce sostituzioni e non annulla la scheda gia' accettata dal BB |
+| AC-010 | Tutte le fasi | Suite test | `python -m pytest` | Non applicabile | Coperto operativamente in Milestone 7A con la suite completa |
 | AC-011 | WP4 prestazioni | `benchmarks/runner.py` | `test_benchmark_smoke.py` | Report benchmark | Da implementare |
-| DEC-001 | Tutte le fasi | `actors/*` | Workflow locale | Non applicabile | Da implementare |
+| DEC-001 | Tutte le fasi | `actors/*`, `workflow.py` | `test_complete_election_workflow.py` | Non applicabile | Completato in Milestone 7A: lo scenario end-to-end usa attori logici nello stesso processo senza rete o servizi esterni |
 | DEC-002 | Tutte le fasi | `serialization.py` | Test serializzazione | Dimensione messaggi | Completato in Milestone 1 |
 | DEC-003 | Fase 2, Fase 5 | `encryption.py` | Test cifratura | Cifratura voto | Completato in Milestone 2 per la primitiva RSA-OAEP |
 | DEC-004 | Fase 1, Fase 2, Fase 3, Fase 5 | `signatures.py` | Test firme | Firma e verifica | Completato in Milestone 2 per la primitiva RSA-PSS |
@@ -102,7 +102,7 @@ Stato iniziale di tutti gli elementi: `Da implementare`. Lo stato `Da riallinear
 | DEC-006 | Fase 0, Fase 5 | `ta_blob.py`, `tallying_authority.py` | Test `blobTA` | Apertura `blobTA` | Completato nella correzione `blobTA`: AES-256-CBC, PKCS7, HMAC-SHA256, HKDF-SHA256, IV/ciphertext/MAC, Encrypt-then-Authenticate e nessun Fernet sono coperti da test |
 | DEC-007 | Fase 1, Fase 4 | `voter_state.py` | Test persistenza | Apertura stato | Completato in Milestone 4 |
 | DEC-008 | Fase 0, Fase 5 | `shamir.py` | Test Shamir | Shamir | Completato in Milestone 3 |
-| DEC-009 | Fase 0 | `config.py` | Test configurazione | Profili | Da implementare |
+| DEC-009 | Fase 0 | `config.py` | `test_config.py` | Profili | Completato in Milestone 7A: profilo demo centralizzato con `Vmax`, soglia, liste, elettori, finestre temporali e piano dimostrativo validati |
 | DEC-010 | Fase 4 | `registration_authority.py`, `voter.py` | Test stato perso | Non applicabile | Completato in Milestone 4 per la mancata riemissione RA; completato in Milestone 5 per la sostituzione basata sullo stesso stato pseudonimo |
 | DEC-011 | Fase 5 | `errors.py`, `crypto/*` | Test errori generici | Non applicabile | Completato in Milestone 2 per primitive RSA-OAEP e AES-GCM locale; completato nella correzione `blobTA` per errori pubblici generici su MAC, IV, ciphertext, contesto, `election_id`, padding e input malformati |
 | DEC-012 | Tutte le fasi | `stores.py`, `actors/*` | Test separazione dati | Non applicabile | Coperto in Milestone 4 per gli archivi introdotti; mantenuto in Milestone 5 per il registro BB senza identita' reali |
