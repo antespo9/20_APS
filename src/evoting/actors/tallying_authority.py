@@ -7,32 +7,16 @@ from dataclasses import dataclass
 import os
 
 from evoting.actors.commissioners import CommissionerSet, CommissionerShare
-from evoting.crypto.aead import AeadCiphertext, decrypt_aead, encrypt_aead
+from evoting.crypto.ta_blob import (
+    BLOB_TA_AAD_CONTEXT,
+    BLOB_TA_CONTEXT,
+    TaBlob,
+    blob_ta_aad,
+    open_ta_private_key,
+    protect_ta_private_key,
+)
 from evoting.crypto.shamir import WRAPPING_KEY_SIZE, ShamirShare, reconstruct_secret, split_secret
 from evoting.errors import CRYPTOGRAPHIC_ERROR_MESSAGE, CryptographicError
-from evoting.serialization import canonical_bytes
-
-
-BLOB_TA_AAD_CONTEXT = "evoting.blobTA.v1"
-
-
-@dataclass(frozen=True, slots=True)
-class TaBlob:
-    election_id: str
-    aad_context: str
-    nonce: bytes
-    ciphertext: bytes
-    tag: bytes
-    threshold_t: int
-    threshold_n: int
-
-    def __post_init__(self) -> None:
-        _require_identifier(self.election_id)
-        if not isinstance(self.aad_context, str) or not self.aad_context.strip():
-            raise CryptographicError(CRYPTOGRAPHIC_ERROR_MESSAGE)
-        if not isinstance(self.nonce, bytes) or not isinstance(self.ciphertext, bytes) or not isinstance(self.tag, bytes):
-            raise CryptographicError(CRYPTOGRAPHIC_ERROR_MESSAGE)
-        _require_threshold(self.threshold_t, self.threshold_n)
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,18 +45,9 @@ class TallyingAuthority:
         )
 
     def open_blob(self, blob: TaBlob, shares: Sequence[CommissionerShare]) -> bytes:
-        if blob.election_id != self.election_id:
+        if not isinstance(blob, TaBlob) or blob.election_id != self.election_id:
             raise CryptographicError(CRYPTOGRAPHIC_ERROR_MESSAGE)
         return open_protected_blob(blob, shares)
-
-
-def blob_ta_aad(election_id: str, aad_context: str = BLOB_TA_AAD_CONTEXT) -> bytes:
-    """Build deterministic, non-empty AAD for ``blobTA`` using canonical serialization."""
-
-    _require_identifier(election_id)
-    if not isinstance(aad_context, str) or not aad_context.strip():
-        raise CryptographicError(CRYPTOGRAPHIC_ERROR_MESSAGE)
-    return canonical_bytes({"context": aad_context, "election_id": election_id})
 
 
 def create_protected_blob(
@@ -90,18 +65,16 @@ def create_protected_blob(
     _require_threshold(threshold_t, threshold_n)
 
     wrapping_key = os.urandom(WRAPPING_KEY_SIZE)
-    encrypted = encrypt_aead(wrapping_key, private_key_pem, blob_ta_aad(election_id))
-    shamir_shares = split_secret(wrapping_key, threshold_t, threshold_n)
-    commissioner_set = CommissionerSet.from_shares(election_id, shamir_shares, commissioner_ids)
-    blob = TaBlob(
+    blob = protect_ta_private_key(
         election_id=election_id,
-        aad_context=BLOB_TA_AAD_CONTEXT,
-        nonce=encrypted.nonce,
-        ciphertext=encrypted.ciphertext,
-        tag=encrypted.tag,
+        private_key_pem=private_key_pem,
+        wrapping_key=wrapping_key,
         threshold_t=threshold_t,
         threshold_n=threshold_n,
+        context=BLOB_TA_CONTEXT,
     )
+    shamir_shares = split_secret(wrapping_key, threshold_t, threshold_n)
+    commissioner_set = CommissionerSet.from_shares(election_id, shamir_shares, commissioner_ids)
     return blob, commissioner_set
 
 
@@ -112,8 +85,7 @@ def open_protected_blob(blob: TaBlob, shares: Sequence[CommissionerShare]) -> by
         raise CryptographicError(CRYPTOGRAPHIC_ERROR_MESSAGE)
     shamir_shares = _extract_shamir_shares(blob, shares)
     wrapping_key = reconstruct_secret(shamir_shares, blob.threshold_t)
-    ciphertext = AeadCiphertext(nonce=blob.nonce, ciphertext=blob.ciphertext, tag=blob.tag)
-    return decrypt_aead(wrapping_key, ciphertext, blob_ta_aad(blob.election_id, blob.aad_context))
+    return open_ta_private_key(blob, wrapping_key)
 
 
 def _extract_shamir_shares(blob: TaBlob, shares: Sequence[CommissionerShare]) -> tuple[ShamirShare, ...]:
@@ -162,6 +134,7 @@ def _require_threshold(threshold_t: int, threshold_n: int) -> None:
 
 __all__ = [
     "BLOB_TA_AAD_CONTEXT",
+    "BLOB_TA_CONTEXT",
     "TaBlob",
     "TallyingAuthority",
     "blob_ta_aad",

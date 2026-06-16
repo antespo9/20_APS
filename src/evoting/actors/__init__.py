@@ -12,6 +12,7 @@ from evoting.actors.registration_authority import (
 )
 from evoting.actors.tallying_authority import (
     BLOB_TA_AAD_CONTEXT,
+    BLOB_TA_CONTEXT,
     TaBlob,
     TallyingAuthority,
     blob_ta_aad,
@@ -28,6 +29,7 @@ from evoting.actors.voter import (
 __all__ = [
     "AUTHORIZATION_ERROR_MESSAGE",
     "BLOB_TA_AAD_CONTEXT",
+    "BLOB_TA_CONTEXT",
     "CommissionerSet",
     "CommissionerShare",
     "AuthorizationError",

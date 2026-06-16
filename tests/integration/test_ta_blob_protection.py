@@ -4,7 +4,7 @@ import pytest
 
 from evoting.actors.commissioners import CommissionerShare
 from evoting.actors.tallying_authority import (
-    BLOB_TA_AAD_CONTEXT,
+    BLOB_TA_CONTEXT,
     TaBlob,
     TallyingAuthority,
     create_protected_blob,
@@ -61,6 +61,13 @@ def test_tallying_authority_class_creates_and_opens_blob() -> None:
     assert ta.open_blob(blob, commissioners.collect(("c1", "c3", "c5"))) == private_key_pem
 
 
+def test_tallying_authority_rejects_blob_for_another_election() -> None:
+    _, blob, shares = _setup()
+    ta = TallyingAuthority(election_id="election-2027", threshold_t=3, threshold_n=5)
+
+    _assert_generic_error(lambda: ta.open_blob(blob, shares[:3]))
+
+
 def test_blob_does_not_open_with_less_than_threshold_shares() -> None:
     _, blob, shares = _setup()
 
@@ -79,9 +86,9 @@ def test_altered_share_does_not_open_blob() -> None:
     _assert_generic_error(lambda: open_protected_blob(blob, (shares[0], altered_share, shares[2])))
 
 
-def test_altered_tag_does_not_open_blob() -> None:
+def test_altered_mac_does_not_open_blob() -> None:
     _, blob, shares = _setup()
-    altered = replace(blob, tag=blob.tag[:-1] + bytes([blob.tag[-1] ^ 1]))
+    altered = replace(blob, mac=blob.mac[:-1] + bytes([blob.mac[-1] ^ 1]))
 
     _assert_generic_error(lambda: open_protected_blob(altered, shares[:3]))
 
@@ -93,23 +100,30 @@ def test_altered_ciphertext_does_not_open_blob() -> None:
     _assert_generic_error(lambda: open_protected_blob(altered, shares[:3]))
 
 
-def test_altered_nonce_does_not_open_blob() -> None:
+def test_altered_iv_does_not_open_blob() -> None:
     _, blob, shares = _setup()
-    altered = replace(blob, nonce=blob.nonce[:-1] + bytes([blob.nonce[-1] ^ 1]))
+    altered = replace(blob, iv=blob.iv[:-1] + bytes([blob.iv[-1] ^ 1]))
 
     _assert_generic_error(lambda: open_protected_blob(altered, shares[:3]))
 
 
-def test_altered_aad_context_does_not_open_blob() -> None:
+def test_altered_context_does_not_open_blob() -> None:
     _, blob, shares = _setup()
-    altered = replace(blob, aad_context=BLOB_TA_AAD_CONTEXT + ".altered")
+    altered = replace(blob, context=BLOB_TA_CONTEXT + ".altered")
 
     _assert_generic_error(lambda: open_protected_blob(altered, shares[:3]))
 
 
-def test_different_election_id_does_not_open_blob() -> None:
+def test_altered_election_id_does_not_open_blob() -> None:
     _, blob, shares = _setup()
     altered = replace(blob, election_id="election-2027")
+
+    _assert_generic_error(lambda: open_protected_blob(altered, shares[:3]))
+
+
+def test_altered_threshold_metadata_does_not_open_blob() -> None:
+    _, blob, shares = _setup()
+    altered = replace(blob, threshold_n=6)
 
     _assert_generic_error(lambda: open_protected_blob(altered, shares[:3]))
 
@@ -141,17 +155,21 @@ def test_duplicate_share_x_values_are_rejected_when_opening_blob() -> None:
     _assert_generic_error(lambda: open_protected_blob(blob, (shares[0], duplicate_x_share, shares[2])))
 
 
-def test_blob_does_not_contain_wrapping_key_field() -> None:
+def test_blob_uses_cbc_hmac_fields_and_does_not_contain_wrapping_key_field() -> None:
     _, blob, _ = _setup()
 
     assert not hasattr(blob, "kwrap")
     assert not hasattr(blob, "wrapping_key")
+    assert not hasattr(blob, "kenc")
+    assert not hasattr(blob, "kmac")
+    assert not hasattr(blob, "nonce")
+    assert not hasattr(blob, "tag")
     assert set(blob.__dataclass_fields__) == {
         "election_id",
-        "aad_context",
-        "nonce",
+        "context",
+        "iv",
         "ciphertext",
-        "tag",
+        "mac",
         "threshold_t",
         "threshold_n",
     }
