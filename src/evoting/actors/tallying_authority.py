@@ -4,9 +4,19 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 import os
+import re
 
 from evoting.actors.commissioners import CommissionerSet, CommissionerShare
+from evoting.actors.verifier import (
+    PublicVerificationError,
+    tally_result_message,
+    validate_public_log,
+    verify_tally_result_signature,
+)
+from evoting.actors.bulletin_board import BoardLogRecord
+from evoting.crypto.encryption import decrypt_vote, load_encryption_private_key
 from evoting.crypto.ta_blob import (
     BLOB_TA_AAD_CONTEXT,
     BLOB_TA_CONTEXT,
@@ -16,7 +26,37 @@ from evoting.crypto.ta_blob import (
     protect_ta_private_key,
 )
 from evoting.crypto.shamir import WRAPPING_KEY_SIZE, ShamirShare, reconstruct_secret, split_secret
-from evoting.errors import CRYPTOGRAPHIC_ERROR_MESSAGE, CryptographicError
+from evoting.crypto.signatures import load_signature_private_key, sign_message
+from evoting.errors import CRYPTOGRAPHIC_ERROR_MESSAGE, CryptographicError, EvotingError
+from evoting.models import BoardEntry, CloseState, ElectionParams, TallyResult
+
+
+TALLY_ERROR_MESSAGE = "tallying authority operation failed"
+_LIST_CODE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
+
+
+class TallyingAuthorityError(EvotingError):
+    """Raised when tallying cannot proceed because global preconditions failed."""
+
+
+class BallotAnomalyCode(StrEnum):
+    MALFORMED_CIPHERTEXT = "MALFORMED_CIPHERTEXT"
+    DECRYPTION_FAILED = "DECRYPTION_FAILED"
+    UNDECODABLE_PLAINTEXT = "UNDECODABLE_PLAINTEXT"
+    INVALID_PLAINTEXT_FORMAT = "INVALID_PLAINTEXT_FORMAT"
+    LIST_CODE_OUT_OF_DOMAIN = "LIST_CODE_OUT_OF_DOMAIN"
+
+
+@dataclass(frozen=True, slots=True)
+class AnomalousBallot:
+    rid: bytes
+    code: BallotAnomalyCode
+
+
+@dataclass(frozen=True, slots=True)
+class TallyReport:
+    result: TallyResult
+    anomalies: tuple[AnomalousBallot, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +88,31 @@ class TallyingAuthority:
         if not isinstance(blob, TaBlob) or blob.election_id != self.election_id:
             raise CryptographicError(CRYPTOGRAPHIC_ERROR_MESSAGE)
         return open_protected_blob(blob, shares)
+
+    def tally(
+        self,
+        *,
+        params: ElectionParams,
+        records: Sequence[BoardLogRecord],
+        close_state: CloseState,
+        blob: TaBlob,
+        shares: Sequence[CommissionerShare],
+        signing_private_key: object,
+    ) -> TallyReport:
+        if not isinstance(params, ElectionParams):
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        if params.election_id != self.election_id:
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        if params.threshold.t != self.threshold_t or params.threshold.n != self.threshold_n:
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        return tally_election(
+            params=params,
+            records=records,
+            close_state=close_state,
+            blob=blob,
+            shares=shares,
+            signing_private_key=signing_private_key,
+        )
 
 
 def create_protected_blob(
@@ -88,6 +153,81 @@ def open_protected_blob(blob: TaBlob, shares: Sequence[CommissionerShare]) -> by
     return open_ta_private_key(blob, wrapping_key)
 
 
+def tally_election(
+    *,
+    params: ElectionParams,
+    records: Sequence[BoardLogRecord],
+    close_state: CloseState,
+    blob: TaBlob,
+    shares: Sequence[CommissionerShare],
+    signing_private_key: object,
+) -> TallyReport:
+    """Perform tallying after public log validation and authenticated ``blobTA`` opening."""
+
+    try:
+        if not isinstance(params, ElectionParams) or not isinstance(blob, TaBlob):
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        if blob.election_id != params.election_id:
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        if blob.threshold_t != params.threshold.t or blob.threshold_n != params.threshold.n:
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        log_state = validate_public_log(params, records, close_state)
+        if not isinstance(shares, Sequence) or isinstance(shares, (bytes, bytearray, str)):
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        if len(shares) < blob.threshold_t:
+            raise TallyingAuthorityError(TALLY_ERROR_MESSAGE)
+        private_key_pem = open_protected_blob(blob, shares)
+        decryption_key = load_encryption_private_key(private_key_pem)
+        signing_key = (
+            load_signature_private_key(signing_private_key)
+            if isinstance(signing_private_key, bytes)
+            else signing_private_key
+        )
+    except (PublicVerificationError, CryptographicError, TallyingAuthorityError) as exc:
+        raise TallyingAuthorityError(TALLY_ERROR_MESSAGE) from exc
+    except Exception as exc:
+        raise TallyingAuthorityError(TALLY_ERROR_MESSAGE) from exc
+
+    allowed_codes = tuple(item.code for item in params.lists)
+    totals = {code: 0 for code in allowed_codes}
+    anomalies: list[AnomalousBallot] = []
+
+    for entry in log_state.final_ballot_entries:
+        classification = _decrypt_and_classify(entry, decryption_key, allowed_codes)
+        if isinstance(classification, BallotAnomalyCode):
+            anomalies.append(AnomalousBallot(rid=entry.rid, code=classification))
+        else:
+            totals[classification] += 1
+
+    final_ballot_count = len(log_state.final_ballot_entries)
+    valid_ballot_count = sum(totals.values())
+    anomalous_count = len(anomalies)
+    try:
+        signature = sign_message(
+            signing_key,
+            tally_result_message(
+                election_id=params.election_id,
+                h_close=log_state.h_close,
+                totals_by_list=totals,
+                final_ballot_count=final_ballot_count,
+                valid_ballot_count=valid_ballot_count,
+                anomalous_count=anomalous_count,
+            ),
+        )
+        result = TallyResult(
+            election_id=params.election_id,
+            h_close=log_state.h_close,
+            totals_by_list=totals,
+            anomalous_count=anomalous_count,
+            signature_ta=signature,
+            final_ballot_count=final_ballot_count,
+            valid_ballot_count=valid_ballot_count,
+        )
+    except Exception as exc:
+        raise TallyingAuthorityError(TALLY_ERROR_MESSAGE) from exc
+    return TallyReport(result=result, anomalies=tuple(anomalies))
+
+
 def _extract_shamir_shares(blob: TaBlob, shares: Sequence[CommissionerShare]) -> tuple[ShamirShare, ...]:
     if not isinstance(shares, Sequence) or isinstance(shares, (bytes, bytearray, str)):
         raise CryptographicError(CRYPTOGRAPHIC_ERROR_MESSAGE)
@@ -108,6 +248,25 @@ def _extract_shamir_shares(blob: TaBlob, shares: Sequence[CommissionerShare]) ->
         share_x_values.add(item.share.x)
         extracted.append(item.share)
     return tuple(extracted)
+
+
+def _decrypt_and_classify(entry: BoardEntry, private_key: object, allowed_codes: Sequence[str]) -> str | BallotAnomalyCode:
+    expected_ciphertext_size = private_key.key_size // 8
+    if not isinstance(entry.c, bytes) or len(entry.c) != expected_ciphertext_size:
+        return BallotAnomalyCode.MALFORMED_CIPHERTEXT
+    try:
+        plaintext = decrypt_vote(private_key, entry.c)
+    except CryptographicError:
+        return BallotAnomalyCode.DECRYPTION_FAILED
+    try:
+        decoded = plaintext.decode("utf-8")
+    except UnicodeDecodeError:
+        return BallotAnomalyCode.UNDECODABLE_PLAINTEXT
+    if not _LIST_CODE_RE.fullmatch(decoded):
+        return BallotAnomalyCode.INVALID_PLAINTEXT_FORMAT
+    if decoded not in allowed_codes:
+        return BallotAnomalyCode.LIST_CODE_OUT_OF_DOMAIN
+    return decoded
 
 
 def _require_identifier(value: str) -> None:
@@ -133,11 +292,18 @@ def _require_threshold(threshold_t: int, threshold_n: int) -> None:
 
 
 __all__ = [
+    "AnomalousBallot",
+    "BallotAnomalyCode",
     "BLOB_TA_AAD_CONTEXT",
     "BLOB_TA_CONTEXT",
     "TaBlob",
+    "TALLY_ERROR_MESSAGE",
+    "TallyReport",
     "TallyingAuthority",
+    "TallyingAuthorityError",
     "blob_ta_aad",
     "create_protected_blob",
     "open_protected_blob",
+    "tally_election",
+    "verify_tally_result_signature",
 ]

@@ -250,6 +250,8 @@ class TallyResult:
     totals_by_list: Mapping[str, int]
     anomalous_count: int
     signature_ta: bytes
+    final_ballot_count: int = 0
+    valid_ballot_count: int = 0
 
     def __post_init__(self) -> None:
         _validate_identifier(self.election_id, "election_id")
@@ -264,3 +266,5 @@ class TallyResult:
         object.__setattr__(self, "totals_by_list", normalized_totals)
         _validate_non_negative_int(self.anomalous_count, "anomalous_count")
         _validate_bytes(self.signature_ta, "signature_ta")
+        _validate_non_negative_int(self.final_ballot_count, "final_ballot_count")
+        _validate_non_negative_int(self.valid_ballot_count, "valid_ballot_count")
