@@ -3,11 +3,6 @@
 Simulatore stand-alone del protocollo crittografico di voto elettronico
 descritto nel Project Work di Algoritmi e Protocolli per la Sicurezza.
 
-## Documentazione principale
-
-- docs/ProjectWorkAPS.pdf: WP1, WP2 e WP3 del gruppo
-- docs/tracciaProgetto.pdf: traccia ufficiale del progetto
-
 ## Ambiente di sviluppo
 
 - Python
